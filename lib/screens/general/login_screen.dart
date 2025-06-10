@@ -76,127 +76,135 @@ class _LoginScreenState extends State<LoginScreen> {
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [
-              Colors.blue.shade900,
-              Colors.blue.shade700,
-              Colors.blue.shade500,
+              Colors.white,
+              const Color.fromARGB(255, 96, 156, 217),
+              const Color.fromARGB(255, 4, 134, 240),
             ],
           ),
         ),
-        child: SafeArea(
-          child: SingleChildScrollView(
-            padding: const EdgeInsets.symmetric(horizontal: 24),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                SizedBox(height: size.height * 0.1),
-
-                // Logo/Título simplificado
-                const Text(
-                  'ALMACEN',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                    letterSpacing: 1.5,
-                  ),
-                ),
-                const SizedBox(height: 40),
-
-                // Formulario
-                Form(
-                  key: _formKey,
-                  child: Column(
-                    children: [
-                      // Usuario
-                      CustomTextFielTexto(
-                        controller: _userNameController,
-                        labelText: 'Usuario',
-                        prefixIcon: Icons.person_outline,
-                        validator:
-                            (value) =>
-                                value?.isEmpty ?? true
-                                    ? 'Ingresa tu usuario'
-                                    : null,
-                      ),
-                      const SizedBox(height: 20),
-
-                      // Contraseña
-                      CustomTextFielTexto(
-                        controller: _passwordController,
-                        labelText: 'Contraseña',
-                        prefixIcon: Icons.lock_outline,
-                        obscureText: !_isPasswordVisible,
-                        validator:
-                            (value) =>
-                                value?.isEmpty ?? true
-                                    ? 'Ingresa tu contraseña'
-                                    : null,
-                      ),
-                      const SizedBox(height: 10),
-
-                      // Checkbox para mostrar contraseña
-                      Row(
-                        children: [
-                          Checkbox(
-                            value: _isPasswordVisible,
-                            onChanged:
-                                (value) => setState(
-                                  () => _isPasswordVisible = value ?? false,
-                                ),
-                            fillColor: MaterialStateProperty.resolveWith<Color>(
-                              (states) =>
-                                  states.contains(MaterialState.selected)
-                                      ? Colors.white
-                                      : Colors.transparent,
-                            ),
-                            checkColor: Colors.blue.shade900,
-                            side: BorderSide(color: Colors.white),
-                          ),
-                          Text(
-                            'Mostrar contraseña',
-                            style: TextStyle(color: Colors.white),
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 30),
-
-                      // Botón de login
-                      SizedBox(
-                        width: double.infinity,
-                        child: ElevatedButton(
-                          onPressed: _isLoading ? null : _submitForm,
-                          style: ElevatedButton.styleFrom(
-                            backgroundColor: Colors.white,
-                            foregroundColor: Colors.blue.shade900,
-                            padding: const EdgeInsets.symmetric(vertical: 16),
-                            shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(12),
-                            ),
-                            elevation: 0,
-                          ),
-                          child:
-                              _isLoading
-                                  ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(
-                                      strokeWidth: 2,
-                                      color: Colors.blue,
-                                    ),
-                                  )
-                                  : const Text(
-                                    'INICIAR SESIÓN',
-                                    style: TextStyle(
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: 16,
-                                    ),
-                                  ),
+        child: Center(
+          child: SafeArea(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.symmetric(horizontal: 24),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  // Logo/Título simplificado
+                  const Text(
+                    'TRABAJOS',
+                    style: TextStyle(
+                      shadows: [
+                        Shadow(
+                          blurRadius: 10,
+                          color: Colors.black,
+                          offset: Offset(2, 2),
                         ),
-                      ),
-                    ],
+                      ],
+                      color: Colors.white,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                      letterSpacing: 1.5,
+                    ),
                   ),
-                ),
-              ],
+                  const SizedBox(height: 40),
+
+                  // Formulario
+                  Form(
+                    key: _formKey,
+                    child: Column(
+                      children: [
+                        // Usuario
+                        CustomTextFielTexto(
+                          controller: _userNameController,
+                          labelText: 'Usuario',
+                          prefixIcon: Icons.person_outline,
+                          validator:
+                              (value) =>
+                                  value?.isEmpty ?? true
+                                      ? 'Ingresa tu usuario'
+                                      : null,
+                        ),
+                        const SizedBox(height: 20),
+
+                        // Contraseña
+                        CustomTextFielTexto(
+                          controller: _passwordController,
+                          labelText: 'Contraseña',
+                          prefixIcon: Icons.lock_outline,
+                          obscureText: !_isPasswordVisible,
+                          validator:
+                              (value) =>
+                                  value?.isEmpty ?? true
+                                      ? 'Ingresa tu contraseña'
+                                      : null,
+                        ),
+                        const SizedBox(height: 10),
+
+                        // Checkbox para mostrar contraseña
+                        Row(
+                          children: [
+                            Checkbox(
+                              value: _isPasswordVisible,
+                              onChanged:
+                                  (value) => setState(
+                                    () => _isPasswordVisible = value ?? false,
+                                  ),
+                              fillColor:
+                                  MaterialStateProperty.resolveWith<Color>(
+                                    (states) =>
+                                        states.contains(MaterialState.selected)
+                                            ? Colors.white
+                                            : Colors.transparent,
+                                  ),
+                              checkColor: Colors.blue.shade900,
+                              side: BorderSide(color: Colors.white),
+                            ),
+                            Text(
+                              'Mostrar contraseña',
+                              style: TextStyle(color: Colors.white),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 30),
+
+                        // Botón de login
+                        SizedBox(
+                          width: 150,
+                          child: ElevatedButton(
+                            onPressed: _isLoading ? null : _submitForm,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.white,
+                              foregroundColor: Colors.blue.shade900,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              elevation: 0,
+                            ),
+                            child:
+                                _isLoading
+                                    ? const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.blue,
+                                      ),
+                                    )
+                                    : const Text(
+                                      'INICIAR SESIÓN',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: 16,
+                                      ),
+                                    ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
             ),
           ),
         ),
