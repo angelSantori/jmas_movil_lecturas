@@ -147,3 +147,96 @@ class _CustomTextFielTextoState extends State<CustomTextFielTexto>
     );
   }
 }
+
+//Comentario
+class CustomCommentField extends StatelessWidget {
+  final TextEditingController controller;
+  final String labelText;
+  final String? Function(String?)? validator;
+  final ValueChanged<String>? onChanged;
+  final int maxLines;
+  final IconData prefixIcon;
+  final bool showBorder;
+  final bool readOnly;
+
+  const CustomCommentField({
+    super.key,
+    required this.controller,
+    required this.labelText,
+    this.validator,
+    this.onChanged,
+    this.maxLines = 3,
+    this.prefixIcon = Icons.comment,
+    this.showBorder = true,
+    this.readOnly = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      maxLines: maxLines,
+      onChanged: onChanged,
+      readOnly: readOnly,
+      decoration: InputDecoration(
+        labelText: labelText,
+        labelStyle: TextStyle(
+          color: readOnly ? Colors.grey.shade600 : Colors.grey.shade700,
+          fontWeight: FontWeight.bold,
+        ),
+        prefixIcon: Icon(
+          prefixIcon,
+          color: readOnly ? Colors.grey.shade500 : Colors.grey.shade700,
+          size: 20,
+        ),
+        filled: true,
+        fillColor: readOnly ? Colors.grey.shade200 : Colors.grey.shade100,
+        contentPadding: const EdgeInsets.symmetric(
+          vertical: 14,
+          horizontal: 16,
+        ),
+        enabledBorder:
+            showBorder
+                ? OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color:
+                        readOnly ? Colors.grey.shade300 : Colors.grey.shade300,
+                    width: 1.0,
+                  ),
+                )
+                : InputBorder.none,
+        focusedBorder:
+            showBorder && !readOnly
+                ? OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: BorderSide(
+                    color: Colors.blue.shade900,
+                    width: 1.5,
+                  ),
+                )
+                : InputBorder.none,
+        errorBorder:
+            showBorder && !readOnly
+                ? OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.red, width: 1.0),
+                )
+                : InputBorder.none,
+        focusedErrorBorder:
+            showBorder && !readOnly
+                ? OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                  borderSide: const BorderSide(color: Colors.red, width: 1.5),
+                )
+                : InputBorder.none,
+        alignLabelWithHint: true,
+      ),
+      style: TextStyle(
+        fontSize: 16,
+        color: readOnly ? Colors.grey.shade700 : Colors.black,
+      ),
+      validator: readOnly ? null : validator,
+    );
+  }
+}
