@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -94,12 +95,13 @@ Widget buildPhotoSection(
         onTap: isEditable ? onTap : null,
         child: Container(
           height: 200,
+          width: 150,
           decoration: BoxDecoration(
             border: Border.all(
               color: isEditable ? Colors.grey : Colors.grey.shade300,
             ),
             borderRadius: BorderRadius.circular(8),
-            color: !isEditable ? Colors.grey.shade100 : null,
+            color: !isEditable ? Colors.grey.shade100 : Colors.grey.shade50,
           ),
           child:
               imagePath == null
@@ -123,24 +125,61 @@ Widget buildPhotoSection(
                       ],
                     ),
                   )
-                  : Stack(
-                    children: [
-                      Image.file(File(imagePath), fit: BoxFit.cover),
-                      if (!isEditable)
-                        Container(
-                          color: Colors.black.withOpacity(0.3),
-                          child: const Center(
-                            child: Icon(
-                              Icons.lock_outline,
-                              color: Colors.white,
-                              size: 40,
+                  : FutureBuilder<Size>(
+                    future: _getImageSize(imagePath),
+                    builder: (context, snapshot) {
+                      if (!snapshot.hasData) {
+                        return const Center(child: CircularProgressIndicator());
+                      }
+
+                      final size = snapshot.data!;
+                      final aspectRatio = size.width / size.height;
+
+                      return Stack(
+                        children: [
+                          AspectRatio(
+                            aspectRatio: aspectRatio,
+                            child: Image.file(
+                              File(imagePath),
+                              fit: BoxFit.cover,
                             ),
                           ),
-                        ),
-                    ],
+                          if (!isEditable)
+                            Container(
+                              color: Colors.black.withOpacity(0.3),
+                              child: const Center(
+                                child: Icon(
+                                  Icons.lock_outline,
+                                  color: Colors.white,
+                                  size: 40,
+                                ),
+                              ),
+                            ),
+                        ],
+                      );
+                    },
                   ),
         ),
       ),
     ],
   );
+}
+
+Future<Size> _getImageSize(String imagePath) async {
+  final completer = Completer<Size>();
+  final file = File(imagePath);
+  final bytes = await file.readAsBytes();
+
+  Image image = Image.memory(bytes);
+  image.image
+      .resolve(const ImageConfiguration())
+      .addListener(
+        ImageStreamListener((ImageInfo info, bool _) {
+          completer.complete(
+            Size(info.image.width.toDouble(), info.image.height.toDouble()),
+          );
+        }),
+      );
+
+  return completer.future;
 }

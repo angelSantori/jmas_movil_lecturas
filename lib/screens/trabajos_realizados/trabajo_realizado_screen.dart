@@ -437,26 +437,29 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
 
                       // Fotos
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                         children: [
-                          buildPhotoSection(
-                            'Foto Antes',
-                            _fotoAntesPath,
-                            isEditable ? () => _takePhoto(true) : null,
-                            isEditable: isEditable,
-                            //() => _takePhoto(true),
+                          Flexible(
+                            child: buildPhotoSection(
+                              'Foto Antes',
+                              _fotoAntesPath,
+                              isEditable ? () => _takePhoto(true) : null,
+                              isEditable: isEditable,
+                              //() => _takePhoto(true),
+                            ),
                           ),
-                          const SizedBox(width: 16),
 
                           if (_fotoAntesPath != null)
                             // Foto después
-                            buildPhotoSection(
-                              'Foto Después',
-                              _fotoDespuesPath,
-                              isEditable && _fotoAntesPath != null
-                                  ? () => _takePhoto(false)
-                                  : null,
-                              isEditable: isEditable,
+                            Flexible(
+                              child: buildPhotoSection(
+                                'Foto Después',
+                                _fotoDespuesPath,
+                                isEditable && _fotoAntesPath != null
+                                    ? () => _takePhoto(false)
+                                    : null,
+                                isEditable: isEditable,
+                              ),
                             ),
                         ],
                       ),
