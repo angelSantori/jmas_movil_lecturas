@@ -47,31 +47,50 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   Future<void> _loadTrabajos(int userId) async {
-    setState(() => isLoading = true);
+    setState(() {
+      isLoading = true;
+      trabajos.clear();
+      otCache.clear();
+    });
 
     try {
       final listTrabajos = await _trabajoRealizadoController.getTRXUserID(
         userId,
       );
-
-      otCache.clear();
+      final trabajosFiltrados = <TrabajoRealizado>[];
 
       for (var trabajo in listTrabajos) {
-        if (trabajo.idOrdenTrabajo != null &&
-            !otCache.containsKey(trabajo.idOrdenTrabajo)) {
-          final orden = await _ordenTrabajoController.getOrdenTrabajoXId(
-            trabajo.idOrdenTrabajo!,
-          );
-          otCache[trabajo.idOrdenTrabajo!] = orden;
+        // Verificar si fechaTR y ubicacionTR son nulos o vacíos
+        final sinFecha = trabajo.fechaTR == null || trabajo.fechaTR!.isEmpty;
+        final sinUbicacion =
+            trabajo.ubicacionTR == null || trabajo.ubicacionTR!.isEmpty;
+
+        if (sinFecha && sinUbicacion && trabajo.idOrdenTrabajo != null) {
+          // Solo cargar la orden de trabajo si no está en caché
+          if (!otCache.containsKey(trabajo.idOrdenTrabajo)) {
+            final orden = await _ordenTrabajoController.getOrdenTrabajoXId(
+              trabajo.idOrdenTrabajo!,
+            );
+            if (orden != null) {
+              otCache[trabajo.idOrdenTrabajo!] = orden;
+            }
+          }
+
+          // Solo añadir trabajos que cumplen con el filtro
+          trabajosFiltrados.add(trabajo);
         }
       }
 
-      setState(() {
-        trabajos = listTrabajos;
-        isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          trabajos = trabajosFiltrados;
+          isLoading = false;
+        });
+      }
     } catch (e) {
-      setState(() => isLoading = false);
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
       print('Error _loadTrabajos | HomeScreen: $e');
     }
   }
@@ -184,12 +203,7 @@ class _HomeScreenState extends State<HomeScreen> {
               : trabajos.isEmpty
               ? const Center(child: Text('No tienes trabajos asignadas'))
               : RefreshIndicator(
-                onRefresh: () async {
-                  setState(() {
-                    otCache.clear();
-                  });
-                  await _loadTrabajos(userId!);
-                },
+                onRefresh: () async => await _loadTrabajos(userId!),
                 child: ListView.builder(
                   itemCount: trabajos.length,
                   itemBuilder: (context, index) {
@@ -221,7 +235,7 @@ class _HomeScreenState extends State<HomeScreen> {
                                 getEstadoColor(ordenTrabajo?.estadoOT),
                                 Colors.white,
                                 Colors.white,
-                                getPrioridadColor(ordenTrabajo!.prioridadOT),
+                                getPrioridadColor(ordenTrabajo?.prioridadOT),
                               ],
                               begin: Alignment.centerRight,
                               end: Alignment.centerLeft,
@@ -238,7 +252,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
                                 Text(
-                                  'Orden de trabajo: ${ordenTrabajo.folioOT ?? 'Sin orden de trabajo'}',
+                                  'Orden de trabajo: ${ordenTrabajo!.folioOT ?? 'Sin orden de trabajo'}',
                                   style: TextStyle(color: Colors.grey.shade900),
                                 ),
                                 const SizedBox(height: 4),
@@ -305,8 +319,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                                 : null,
                                         isReadOnly:
                                             trabajoExistente.ubicacionTR != null
-                                                ? false
-                                                : true,
+                                                ? true
+                                                : false,
                                       ),
                                 ),
                               );
