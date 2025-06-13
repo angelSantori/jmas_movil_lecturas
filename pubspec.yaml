@@ -19,6 +19,7 @@ dependencies:
   geolocator: ^14.0.1 #Localicaión
   image_picker: ^1.1.2 #Seleccionar imagen
   path_provider: ^2.1.5 #Provider
+  connectivity_plus: ^6.1.4 #Conexión
 
 dev_dependencies:
   flutter_test:
