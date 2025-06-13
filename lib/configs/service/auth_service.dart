@@ -1,5 +1,7 @@
 import 'dart:convert';
+import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:http/io_client.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/users_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -13,6 +15,29 @@ class AuthService {
   //200.200.200.198
 
   Users? _currentUser;
+
+  IOClient _createHttpClient() {
+    final ioClient = HttpClient();
+    ioClient.badCertificateCallback =
+        (X509Certificate cert, String host, int port) => true;
+    return IOClient(ioClient);
+  }
+
+  Future<bool> checkApiConnection() async {
+    try {
+      final IOClient client = _createHttpClient();
+      final response = await client
+          .get(
+            Uri.parse('$apiURL/health'),
+            headers: {'Content-Type': 'application/json; charset=UTF-8'},
+          )
+          .timeout(const Duration(seconds: 5));
+
+      return response.statusCode == 200;
+    } catch (e) {
+      return false;
+    }
+  }
 
   static Future<void> ensureInitialized() async {
     try {
