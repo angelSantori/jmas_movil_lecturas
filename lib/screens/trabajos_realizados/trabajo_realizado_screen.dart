@@ -395,22 +395,24 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      //Info Salida
-                      buildSectionCard(
-                        'Salida: ${_salida?.salida_CodFolio ?? 'N/A'}',
-                        [
-                          buildInfoItem(
-                            'Colonia',
-                            '${_salida?.idColonia ?? 'N/A'} - ${_nombreColonia ?? 'N/A'}',
-                          ),
-                          const SizedBox(height: 8),
-                          buildInfoItem(
-                            'Calle',
-                            '${_salida?.idCalle ?? 'N/A'} - ${_nombreCalle ?? 'N/A'}',
-                          ),
-                        ],
-                      ),
-                      const SizedBox(height: 8),
+                      if (_salida != null) ...[
+                        //Info Salida
+                        buildSectionCard(
+                          'Salida: ${_salida?.salida_CodFolio ?? 'N/A'}',
+                          [
+                            buildInfoItem(
+                              'Colonia',
+                              '${_salida?.idColonia ?? 'N/A'} - ${_nombreColonia ?? 'N/A'}',
+                            ),
+                            const SizedBox(height: 8),
+                            buildInfoItem(
+                              'Calle',
+                              '${_salida?.idCalle ?? 'N/A'} - ${_nombreCalle ?? 'N/A'}',
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                      ],
 
                       //Info Orden de trabajo
                       buildSectionCard(
