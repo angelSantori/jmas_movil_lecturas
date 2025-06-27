@@ -1,0 +1,228 @@
+import 'package:jmas_movil_lecturas/configs/controllers/orden_trabajo_controller.dart';
+import 'package:jmas_movil_lecturas/configs/controllers/trabajo_realizado_controller.dart';
+import 'package:sqflite/sqflite.dart';
+import 'package:path/path.dart';
+
+class DatabaseHelper {
+  static final DatabaseHelper _instance = DatabaseHelper._internal();
+  static Database? _database;
+
+  factory DatabaseHelper() => _instance;
+
+  DatabaseHelper._internal();
+
+  Future<Database> get database async {
+    if (_database != null) return _database!;
+    _database = await _initDatabase();
+    return _database!;
+  }
+
+  Future<Database> _initDatabase() async {
+    final path = await getDatabasesPath();
+    return openDatabase(
+      join(path, 'trabajos_realizados.db'),
+      onCreate: (db, version) async {
+        await db.execute('''
+          CREATE TABLE trabajos_realizados(
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            idTrabajoRealizado INTEGER,
+            folioTR TEXT,
+            fechaTR TEXT,
+            ubicacionTR TEXT,
+            comentarioTR TEXT,
+            fotoAntes64TR TEXT,
+            fotoDespues64TR TEXT,
+            idUserTR INTEGER,
+            idOrdenTrabajo INTEGER,
+            idSalida INTEGER,
+            sincronizado INTEGER DEFAULT 0,
+            fechaModificacion TEXT
+          )
+        ''');
+
+        // Nueva tabla para órdenes de trabajo
+        await db.execute('''
+        CREATE TABLE ordenes_trabajo(
+          idOrdenTrabajo INTEGER PRIMARY KEY,
+          folioOT TEXT,
+          fechaOT TEXT,
+          medioOT TEXT,
+          materialOT INTEGER,
+          estadoOT TEXT,
+          prioridadOT TEXT,
+          idUser INTEGER,
+          idPadron INTEGER,
+          idTipoProblema INTEGER
+        )
+      ''');
+      },
+      version: 5,
+    );
+  }
+
+  Future<bool> _ensureOrdenesTrabajoTableExists() async {
+    final db = await database;
+    try {
+      await db.rawQuery('SELECT 1 FROM ordenes_trabajo LIMIT 1');
+      return true;
+    } catch (e) {
+      // Si falla, crear la tabla
+      await db.execute('''
+      CREATE TABLE IF NOT EXISTS ordenes_trabajo(
+        idOrdenTrabajo INTEGER PRIMARY KEY,
+        folioOT TEXT,
+        fechaOT TEXT,
+        medioOT TEXT,
+        materialOT INTEGER,
+        estadoOT TEXT,
+        prioridadOT TEXT,
+        idUser INTEGER,
+        idPadron INTEGER,
+        idTipoProblema INTEGER
+      )
+    ''');
+      return false;
+    }
+  }
+
+  Future<int> insertOrUpdateOrdenTrabajo(OrdenTrabajo orden) async {
+    final db = await database;
+    return await db.insert('ordenes_trabajo', {
+      'idOrdenTrabajo': orden.idOrdenTrabajo,
+      'folioOT': orden.folioOT,
+      'fechaOT': orden.fechaOT,
+      'medioOT': orden.medioOT,
+      'materialOT': orden.materialOT == true ? 1 : 0,
+      'estadoOT': orden.estadoOT,
+      'prioridadOT': orden.prioridadOT,
+      'idUser': orden.idUser,
+      'idPadron': orden.idPadron,
+      'idTipoProblema': orden.idTipoProblema,
+    }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  // Obtener orden de trabajo por ID
+  Future<OrdenTrabajo?> getOrdenTrabajo(int idOrdenTrabajo) async {
+    final db = await database;
+    try {
+      final List<Map<String, dynamic>> maps = await db.query(
+        'ordenes_trabajo',
+        where: 'idOrdenTrabajo = ?',
+        whereArgs: [idOrdenTrabajo],
+        limit: 1,
+      );
+
+      if (maps.isNotEmpty) {
+        return OrdenTrabajo.fromMap(maps.first);
+      }
+      return null;
+    } catch (e) {
+      print('Error al obtener orden de trabajo: $e');
+      return null;
+    }
+  }
+
+  Future<Map<int, OrdenTrabajo>> getOrdenesTrabajoCache() async {
+    final db = await database;
+    try {
+      final List<Map<String, dynamic>> maps = await db.query('ordenes_trabajo');
+      final cache = <int, OrdenTrabajo>{};
+      for (var map in maps) {
+        try {
+          final orden = OrdenTrabajo.fromMap(map);
+          if (orden.idOrdenTrabajo != null) {
+            cache[orden.idOrdenTrabajo!] = orden;
+          }
+        } catch (e) {
+          print('Error al parsear orden de trabajo: $e');
+        }
+      }
+      return cache;
+    } catch (e) {
+      print('Error al obtener órdenes de trabajo: $e');
+      return {};
+    }
+  }
+
+  Future<int> insertTrabajo(TrabajoRealizado trabajo) async {
+    final db = await database;
+    return await db.insert(
+      'trabajos_realizados',
+      trabajo.toMap()..addAll({
+        'sincronizado': 0,
+        'fechaModificacion': DateTime.now().toIso8601String(),
+      }),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<List<TrabajoRealizado>> getTrabajosNoSincronizados() async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'trabajos_realizados',
+      where: 'sincronizado = ?',
+      whereArgs: [0],
+      columns: [
+        'idTrabajoRealizado',
+        'folioTR',
+        'fechaTR',
+        'ubicacionTR',
+        'comentarioTR',
+        'idUserTR',
+        'idOrdenTrabajo',
+        'idSalida',
+        'sincronizado',
+        'fechaModificacion',
+      ], // Excluye fotoAntes64TR y fotoDespues64TR
+    );
+    return List.generate(maps.length, (i) {
+      return TrabajoRealizado.fromMap(maps[i]);
+    });
+  }
+
+  Future<int> updateSincronizado(int id, bool sincronizado) async {
+    final db = await database;
+    return await db.update(
+      'trabajos_realizados',
+      {
+        'sincronizado': sincronizado ? 1 : 0,
+        'fechaModificacion': DateTime.now().toIso8601String(),
+      },
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> deleteTrabajo(int id) async {
+    final db = await database;
+    return await db.delete(
+      'trabajos_realizados',
+      where: 'id = ?',
+      whereArgs: [id],
+    );
+  }
+
+  Future<int> clearTrabajos() async {
+    final db = await database;
+    return await db.delete('trabajos_realizados');
+  }
+
+  Future<int> clearOrdenesTrabajo() async {
+    final db = await database;
+    try {
+      final exists = await _ensureOrdenesTrabajoTableExists();
+      if (exists) {
+        return await db.delete('ordenes_trabajo');
+      }
+      return 0;
+    } catch (e) {
+      print('Error clearing ordenes_trabajo: $e');
+      return 0;
+    }
+  }
+
+  Future<void> close() async {
+    final db = await database;
+    await db.close();
+  }
+}
