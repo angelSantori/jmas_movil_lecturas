@@ -4,8 +4,11 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/io_client.dart';
+import 'package:jmas_movil_lecturas/configs/controllers/padron_controller.dart';
+import 'package:jmas_movil_lecturas/configs/controllers/tipo_problema_controller.dart';
 
 import 'package:jmas_movil_lecturas/configs/service/auth_service.dart';
+import 'package:jmas_movil_lecturas/configs/service/database_helper.dart';
 
 class OrdenTrabajoController {
   final AuthService _authService = AuthService();
@@ -19,6 +22,7 @@ class OrdenTrabajoController {
 
   //GET
   //List
+  // En orden_trabajo_controller.dart, modifica el método listOrdenTrabajo:
   Future<List<OrdenTrabajo>> listOrdenTrabajo() async {
     try {
       final IOClient client = _createHttpClient();
@@ -29,7 +33,36 @@ class OrdenTrabajoController {
 
       if (response.statusCode == 200) {
         final List<dynamic> data = json.decode(response.body);
-        return data.map((listOT) => OrdenTrabajo.fromMap(listOT)).toList();
+        final ordenes =
+            data.map((listOT) => OrdenTrabajo.fromMap(listOT)).toList();
+
+        // Guardar localmente
+        final dbHelper = DatabaseHelper();
+        for (var orden in ordenes) {
+          await dbHelper.insertOrUpdateOrdenTrabajo(orden);
+
+          // Si hay padron, guardarlo
+          if (orden.idPadron != null) {
+            final padron = await PadronController().getPadronXId(
+              orden.idPadron!,
+            );
+            if (padron != null) {
+              await dbHelper.insertOrUpdatePadron(padron);
+            }
+          }
+
+          // Si hay tipo problema, guardarlo
+          if (orden.idTipoProblema != null) {
+            final tipoProblema = await TipoProblemaController().tipoProblemaXId(
+              orden.idTipoProblema!,
+            );
+            if (tipoProblema != null) {
+              await dbHelper.insertOrUpdateTipoProblema(tipoProblema);
+            }
+          }
+        }
+
+        return ordenes;
       } else {
         print(
           'Error listOrdenTrabajo | Ife | Controller: ${response.statusCode} - ${response.body}',
