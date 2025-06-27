@@ -1,4 +1,6 @@
 import 'package:jmas_movil_lecturas/configs/controllers/orden_trabajo_controller.dart';
+import 'package:jmas_movil_lecturas/configs/controllers/padron_controller.dart';
+import 'package:jmas_movil_lecturas/configs/controllers/tipo_problema_controller.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/trabajo_realizado_controller.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
@@ -40,7 +42,7 @@ class DatabaseHelper {
           )
         ''');
 
-        // Nueva tabla para órdenes de trabajo
+        //  Ordenes de trabajo
         await db.execute('''
         CREATE TABLE ordenes_trabajo(
           idOrdenTrabajo INTEGER PRIMARY KEY,
@@ -55,8 +57,25 @@ class DatabaseHelper {
           idTipoProblema INTEGER
         )
       ''');
+
+        //  Padron
+        await db.execute('''
+        CREATE TABLE padron(
+          idPadron INTEGER PRIMARY KEY,
+          padronNombre TEXT,
+          padronDireccion TEXT
+        )
+      ''');
+
+        //  Tipo Problema
+        await db.execute('''
+        CREATE TABLE tipo_problema(
+          idTipoProblema INTEGER PRIMARY KEY,
+          nombreTP TEXT
+        )
+      ''');
       },
-      version: 5,
+      version: 6,
     );
   }
 
@@ -99,6 +118,52 @@ class DatabaseHelper {
       'idPadron': orden.idPadron,
       'idTipoProblema': orden.idTipoProblema,
     }, conflictAlgorithm: ConflictAlgorithm.replace);
+  }
+
+  Future<int> insertOrUpdatePadron(Padron padron) async {
+    final db = await database;
+    return await db.insert(
+      'padron',
+      padron.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<Padron?> getPadron(int idPadron) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'padron',
+      where: 'idPadron = ?',
+      whereArgs: [idPadron],
+      limit: 1,
+    );
+    if (maps.isNotEmpty) {
+      return Padron.fromMap(maps.first);
+    }
+    return null;
+  }
+
+  Future<int> insertOrUpdateTipoProblema(TipoProblema tipoProblema) async {
+    final db = await database;
+    return await db.insert(
+      'tipo_problema',
+      tipoProblema.toMap(),
+      conflictAlgorithm: ConflictAlgorithm.replace,
+    );
+  }
+
+  Future<TipoProblema?> getTipoProblema(int idTipoProblema) async {
+    final db = await database;
+    final List<Map<String, dynamic>> maps = await db.query(
+      'tipo_problema',
+      where: 'idTipoProblema = ?',
+      whereArgs: [idTipoProblema],
+      limit: 1,
+    );
+    if (maps.isNotEmpty) {
+      return TipoProblema.fromMap(maps.first);
+    }
+    return null;
   }
 
   // Obtener orden de trabajo por ID
