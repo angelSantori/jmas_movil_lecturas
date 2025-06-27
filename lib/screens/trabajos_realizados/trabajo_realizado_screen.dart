@@ -7,8 +7,11 @@ import 'package:intl/intl.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/calles_controller.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/colonias_controller.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/orden_trabajo_controller.dart';
+import 'package:jmas_movil_lecturas/configs/controllers/padron_controller.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/salidas_controller.dart';
+import 'package:jmas_movil_lecturas/configs/controllers/tipo_problema_controller.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/trabajo_realizado_controller.dart';
+import 'package:jmas_movil_lecturas/configs/service/database_helper.dart';
 import 'package:jmas_movil_lecturas/screens/trabajos_realizados/widgets_tr.dart';
 import 'package:jmas_movil_lecturas/widgets/formularios.dart';
 import 'package:jmas_movil_lecturas/widgets/mensajes.dart';
@@ -33,7 +36,6 @@ class TrabajoRealizadoScreen extends StatefulWidget {
 class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
   final TrabajoRealizadoController _trabajoRealizadoController =
       TrabajoRealizadoController();
-  final SalidasController _salidasController = SalidasController();
   final CallesController _callesController = CallesController();
   final ColoniasController _coloniasController = ColoniasController();
   final OrdenTrabajoController _ordenTrabajoController =
@@ -51,10 +53,12 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _hasExistingData = false;
 
+  Padron? _padron;
+  TipoProblema? _tipoProblema;
+
   @override
   void initState() {
     super.initState();
-    _loadSalidaData();
     _getCurrentLocation();
     _loadInitialData();
     _loadCalleColoniaNames();
@@ -76,8 +80,57 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Cargar datos de salida
-      await _loadSalidaData();
+      // Primero intentar cargar desde la base de datos local
+      if (widget.ordenTrabajo.idPadron != null) {
+        _padron = await DatabaseHelper().getPadron(
+          widget.ordenTrabajo.idPadron!,
+        );
+      }
+
+      if (widget.ordenTrabajo.idTipoProblema != null) {
+        _tipoProblema = await DatabaseHelper().getTipoProblema(
+          widget.ordenTrabajo.idTipoProblema!,
+        );
+      }
+
+      // Si no se encontraron datos locales, intentar obtener del servidor
+      bool hasInternet = true;
+      try {
+        // Verificar conexión a internet
+        final result = await InternetAddress.lookup('example.com');
+        hasInternet = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
+      } catch (_) {
+        hasInternet = false;
+      }
+
+      if (hasInternet) {
+        if (_padron == null && widget.ordenTrabajo.idPadron != null) {
+          try {
+            _padron = await PadronController().getPadronXId(
+              widget.ordenTrabajo.idPadron!,
+            );
+            if (_padron != null) {
+              await DatabaseHelper().insertOrUpdatePadron(_padron!);
+            }
+          } catch (e) {
+            print('Error al obtener padron del servidor: $e');
+          }
+        }
+
+        if (_tipoProblema == null &&
+            widget.ordenTrabajo.idTipoProblema != null) {
+          try {
+            _tipoProblema = await TipoProblemaController().tipoProblemaXId(
+              widget.ordenTrabajo.idTipoProblema!,
+            );
+            if (_tipoProblema != null) {
+              await DatabaseHelper().insertOrUpdateTipoProblema(_tipoProblema!);
+            }
+          } catch (e) {
+            print('Error al obtener tipo problema del servidor: $e');
+          }
+        }
+      }
 
       // Verificar si hay un trabajo existente para editar
       if (widget.trabajoRealizado != null &&
@@ -116,22 +169,6 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
       print('Error al cargar datos iniciales: $e');
     } finally {
       setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _loadSalidaData() async {
-    if (widget.ordenTrabajo.idOrdenTrabajo == null) return;
-
-    try {
-      final salidas = await _salidasController.getSalidaXOT(
-        widget.ordenTrabajo.idOrdenTrabajo!,
-      );
-      if (salidas.isNotEmpty) {
-        _salida = salidas.first;
-        await _loadCalleColoniaNames();
-      }
-    } catch (e) {
-      print('Error al cargar salida: $e');
     }
   }
 
@@ -394,6 +431,21 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
+                      if (_padron != null) ...[
+                        buildSectionCard('Padron: ${_padron!.idPadron}', [
+                          buildInfoItem(
+                            'Padron',
+                            _padron!.padronNombre ?? 'N/A',
+                          ),
+                          const SizedBox(height: 8),
+                          buildInfoItem(
+                            'Dirección',
+                            _padron!.padronDireccion ?? 'N/A',
+                          ),
+                        ]),
+                        const SizedBox(height: 8),
+                      ],
+
                       if (_salida != null) ...[
                         //Info Salida
                         buildSectionCard(
@@ -420,7 +472,7 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
                           const SizedBox(height: 8),
                           buildInfoItem(
                             'Problema',
-                            '${widget.ordenTrabajo.idTipoProblema ?? 0}',
+                            '${_tipoProblema!.nombreTP ?? 'N/A'} - (${widget.ordenTrabajo.idTipoProblema ?? 0})',
                           ),
                         ],
                       ),
