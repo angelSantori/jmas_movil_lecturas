@@ -1,14 +1,13 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 // Librerías
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:http/io_client.dart';
-
 import 'package:jmas_movil_lecturas/configs/service/auth_service.dart';
+import 'package:jmas_movil_lecturas/configs/service/database_helper.dart';
 
 class TrabajoRealizadoController {
   final AuthService _authService = AuthService();
+  final DatabaseHelper _dbHelper = DatabaseHelper();
 
   IOClient _createHttpClient() {
     final ioClient = HttpClient();
@@ -17,14 +16,18 @@ class TrabajoRealizadoController {
     return IOClient(ioClient);
   }
 
-  //GET
+  //  GET
   Future<List<TrabajoRealizado>> getTRXUserID(int userID) async {
     try {
       final IOClient client = _createHttpClient();
-      final response = await client.get(
-        Uri.parse('${_authService.apiURL}/TrabajoRealizadoes/ByUser/$userID'),
-        headers: {'Content-Type': 'application/json; charset=UTF-8'},
-      );
+      final response = await client
+          .get(
+            Uri.parse(
+              '${_authService.apiURL}/TrabajoRealizadoes/ByUser/$userID',
+            ),
+            headers: {'Content-Type': 'application/json; charset=UTF-8'},
+          )
+          .timeout(const Duration(seconds: 60));
 
       if (response.statusCode == 200) {
         final List<dynamic> jsonData = json.decode(response.body);
@@ -35,11 +38,41 @@ class TrabajoRealizadoController {
         print(
           'Error getTRXUserID | Ife | Controller: ${response.statusCode} - ${response.body}',
         );
-        return [];
+        throw Exception('Error al obtener trabajos: ${response.statusCode}');
       }
     } catch (e) {
       print('Error getTRXUserID | Try | Controller: $e');
-      return [];
+      throw Exception('Error de conexión: $e');
+    }
+  }
+
+  //  Trabajo vacío por Usuario
+  Future<List<TrabajoRealizado>> getTRXUserEmptyID(int userID) async {
+    try {
+      final IOClient client = _createHttpClient();
+      final response = await client
+          .get(
+            Uri.parse(
+              '${_authService.apiURL}/TrabajoRealizadoes/ByUserEmpty/$userID',
+            ),
+            headers: {'Content-Type': 'application/json; charset=UTF-8'},
+          )
+          .timeout(const Duration(seconds: 60));
+
+      if (response.statusCode == 200) {
+        final List<dynamic> jsonData = json.decode(response.body);
+        return jsonData
+            .map((listTRXUser) => TrabajoRealizado.fromMap(listTRXUser))
+            .toList();
+      } else {
+        print(
+          'Error getTRXUserID | Ife | Controller: ${response.statusCode} - ${response.body}',
+        );
+        throw Exception('Error al obtener trabajos: ${response.statusCode}');
+      }
+    } catch (e) {
+      print('Error getTRXUserID | Try | Controller: $e');
+      throw Exception('Error de conexión: $e');
     }
   }
 
@@ -57,13 +90,13 @@ class TrabajoRealizadoController {
       if (response.statusCode == 201) {
         return true;
       } else {
-        print(
-          'Error addTrabajoRealizado | Ife | Controller: ${response.statusCode} - ${response.body}',
-        );
+        // Si falla, guardar localmente
+        await _dbHelper.insertTrabajo(trabajoRealizado);
         return false;
       }
     } catch (e) {
-      print('Error addTrabajoRealizado | Try | Controller: $e');
+      // Si hay error de conexión, guardar localmente
+      await _dbHelper.insertTrabajo(trabajoRealizado);
       return false;
     }
   }
@@ -84,15 +117,19 @@ class TrabajoRealizadoController {
       if (response.statusCode == 204) {
         return true;
       } else {
-        print(
-          'Error editTrabajoRealizado | Ife | Controller: ${response.statusCode} - ${response.body}',
-        );
+        // Si falla, guardar localmente como nuevo registro
+        await _dbHelper.insertTrabajo(trabajoRealizado);
         return false;
       }
     } catch (e) {
-      print('Error editTrabajoRealizado | Try | Controller: $e');
+      // Si hay error de conexión, guardar localmente como nuevo registro
+      await _dbHelper.insertTrabajo(trabajoRealizado);
       return false;
     }
+  }
+
+  Future<List<TrabajoRealizado>> getLocalTrabajos() async {
+    return await _dbHelper.getTrabajosNoSincronizados();
   }
 }
 
