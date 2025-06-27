@@ -51,7 +51,7 @@ class UsersController {
       final response = await client.get(
         Uri.parse('${_authService.apiURL}/Users/$idUser'),
         headers: {'Content-Type': 'application/json; charset=UTF-8'},
-      );
+      ).timeout(const Duration(seconds: 60));
 
       if (response.statusCode == 200) {
         final Map<String, dynamic> jsonData =

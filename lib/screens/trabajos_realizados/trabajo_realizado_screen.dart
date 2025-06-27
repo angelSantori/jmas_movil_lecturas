@@ -267,9 +267,7 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Obtener ubicación actual justo antes de guardar
       await _getCurrentLocation();
-
       if (_ubicacion == null) {
         throw 'No se pudo obtener la ubicación actual';
       }
@@ -299,22 +297,17 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
 
       bool success;
       if (widget.trabajoRealizado?.idTrabajoRealizado != null) {
-        // Modo edición
         success = await _trabajoRealizadoController.editTrabajoRealizado(
           trabajo,
         );
       } else {
-        // Modo creación
         success = await _trabajoRealizadoController.addTrabajoRealizado(
           trabajo,
         );
       }
 
       if (success) {
-        // Actualizar estado de la orden de trabajo
         await _updateOrdenTrabajoStatus();
-
-        // Eliminar borrador
         final directory = await getApplicationDocumentsDirectory();
         final file = File(
           '${directory.path}/trabajo_draft_${widget.ordenTrabajo.idOrdenTrabajo}.json',
@@ -324,7 +317,13 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
         if (!mounted) return;
         Navigator.pop(context, true);
       } else {
-        throw 'Error al ${widget.trabajoRealizado?.idTrabajoRealizado != null ? 'editar' : 'crear'} el trabajo realizado';
+        // Si no tuvo éxito pero se guardó localmente
+        if (!mounted) return;
+        Navigator.pop(context, true);
+        showOk(
+          context,
+          'Datos guardados localmente para sincronización posterior',
+        );
       }
     } catch (e) {
       ScaffoldMessenger.of(
@@ -418,19 +417,10 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
                       buildSectionCard(
                         'Orden de Trabajo: ${widget.ordenTrabajo.folioOT ?? 'N/A'}',
                         [
-                          buildInfoItem(
-                            'Dirección',
-                            widget.ordenTrabajo.direccionOT ?? 'N/A',
-                          ),
-                          const SizedBox(height: 8),
-                          buildInfoItem(
-                            'Descripción',
-                            widget.ordenTrabajo.descripcionOT ?? 'N/A',
-                          ),
                           const SizedBox(height: 8),
                           buildInfoItem(
                             'Problema',
-                            widget.ordenTrabajo.tipoProblemaOT ?? 'N/A',
+                            '${widget.ordenTrabajo.idTipoProblema ?? 0}',
                           ),
                         ],
                       ),
