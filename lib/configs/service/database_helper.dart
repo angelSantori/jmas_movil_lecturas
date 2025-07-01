@@ -53,6 +53,7 @@ class DatabaseHelper {
           materialOS INTEGER,
           estadoOS TEXT,
           prioridadOS TEXT,
+          contactoOS INTEGER,
           idUser INTEGER,
           idPadron INTEGER,
           idTipoProblema INTEGER
@@ -76,7 +77,7 @@ class DatabaseHelper {
         )
       ''');
       },
-      version: 10,
+      version: 12,
     );
   }
 
@@ -96,6 +97,7 @@ class DatabaseHelper {
         materialOS INTEGER,
         estadoOS TEXT,
         prioridadOS TEXT,
+        contactoOS INTEGER,
         idUser INTEGER,
         idPadron INTEGER,
         idTipoProblema INTEGER
@@ -115,6 +117,7 @@ class DatabaseHelper {
       'materialOS': orden.materialOS == true ? 1 : 0,
       'estadoOS': orden.estadoOS,
       'prioridadOS': orden.prioridadOS,
+      'contactoOS': orden.contactoOS,
       'idUser': orden.idUser,
       'idPadron': orden.idPadron,
       'idTipoProblema': orden.idTipoProblema,
