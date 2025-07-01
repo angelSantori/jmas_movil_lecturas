@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:jmas_movil_lecturas/configs/controllers/orden_trabajo_controller.dart';
+import 'package:jmas_movil_lecturas/configs/controllers/orden_servicio_controller.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/trabajo_realizado_controller.dart';
 import 'package:jmas_movil_lecturas/configs/service/auth_service.dart';
 import 'package:jmas_movil_lecturas/configs/service/database_helper.dart';
@@ -17,8 +17,8 @@ class _SyncScreenState extends State<SyncScreen> {
   final TrabajoRealizadoController _trabajoRealizadoCntr =
       TrabajoRealizadoController();
   final DatabaseHelper _dbHelper = DatabaseHelper();
-  final OrdenTrabajoController _ordenTrabajoController =
-      OrdenTrabajoController();
+  final OrdenServicioController _ordenServicioController =
+      OrdenServicioController();
 
   bool _isSyncing = false;
   int _pendingSyncs = 0;
@@ -106,7 +106,7 @@ class _SyncScreenState extends State<SyncScreen> {
         }
 
         try {
-          await _dbHelper.clearOrdenesTrabajo();
+          await _dbHelper.clearOrdenesServicio();
         } catch (e) {
           print('Error al limpiar órdenes: $e');
           // Si la tabla no existe, no es un error crítico
@@ -119,16 +119,16 @@ class _SyncScreenState extends State<SyncScreen> {
 
         // Descargar y guardar órdenes de trabajo
         for (final trabajo in trabajos) {
-          if (trabajo.idOrdenTrabajo != null) {
+          if (trabajo.idOrdenServicio != null) {
             try {
-              final orden = await _ordenTrabajoController.getOrdenTrabajoXId(
-                trabajo.idOrdenTrabajo!,
+              final orden = await _ordenServicioController.getOrdenServicioXId(
+                trabajo.idOrdenServicio!,
               );
               if (orden != null) {
-                await _dbHelper.insertOrUpdateOrdenTrabajo(orden);
+                await _dbHelper.insertOrUpdateOrdenServicio(orden);
               }
             } catch (e) {
-              print('Error al descargar orden ${trabajo.idOrdenTrabajo}: $e');
+              print('Error al descargar orden ${trabajo.idOrdenServicio}: $e');
             }
           }
           await _dbHelper.insertTrabajo(trabajo);

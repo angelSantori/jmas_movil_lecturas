@@ -1,4 +1,4 @@
-import 'package:jmas_movil_lecturas/configs/controllers/orden_trabajo_controller.dart';
+import 'package:jmas_movil_lecturas/configs/controllers/orden_servicio_controller.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/padron_controller.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/tipo_problema_controller.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/trabajo_realizado_controller.dart';
@@ -34,24 +34,25 @@ class DatabaseHelper {
             comentarioTR TEXT,
             fotoAntes64TR TEXT,
             fotoDespues64TR TEXT,
+            encuenstaTR INTEGER,
             idUserTR INTEGER,
-            idOrdenTrabajo INTEGER,
+            idOrdenServicio INTEGER,
             idSalida INTEGER,
             sincronizado INTEGER DEFAULT 0,
             fechaModificacion TEXT
           )
         ''');
 
-        //  Ordenes de trabajo
+        //  Ordenes de Servicio
         await db.execute('''
-        CREATE TABLE ordenes_trabajo(
-          idOrdenTrabajo INTEGER PRIMARY KEY,
-          folioOT TEXT,
-          fechaOT TEXT,
-          medioOT TEXT,
-          materialOT INTEGER,
-          estadoOT TEXT,
-          prioridadOT TEXT,
+        CREATE TABLE orden_servicio(
+          idOrdenServicio INTEGER PRIMARY KEY,
+          folioOS TEXT,
+          fechaOS TEXT,
+          medioOS TEXT,
+          materialOS INTEGER,
+          estadoOS TEXT,
+          prioridadOS TEXT,
           idUser INTEGER,
           idPadron INTEGER,
           idTipoProblema INTEGER
@@ -75,26 +76,26 @@ class DatabaseHelper {
         )
       ''');
       },
-      version: 6,
+      version: 10,
     );
   }
 
   Future<bool> _ensureOrdenesTrabajoTableExists() async {
     final db = await database;
     try {
-      await db.rawQuery('SELECT 1 FROM ordenes_trabajo LIMIT 1');
+      await db.rawQuery('SELECT 1 FROM orden_servicio LIMIT 1');
       return true;
     } catch (e) {
       // Si falla, crear la tabla
       await db.execute('''
-      CREATE TABLE IF NOT EXISTS ordenes_trabajo(
-        idOrdenTrabajo INTEGER PRIMARY KEY,
-        folioOT TEXT,
-        fechaOT TEXT,
-        medioOT TEXT,
-        materialOT INTEGER,
-        estadoOT TEXT,
-        prioridadOT TEXT,
+      CREATE TABLE IF NOT EXISTS orden_servicio(
+        idOrdenServicio INTEGER PRIMARY KEY,
+        folioOS TEXT,
+        fechaOS TEXT,
+        medioOS TEXT,
+        materialOS INTEGER,
+        estadoOS TEXT,
+        prioridadOS TEXT,
         idUser INTEGER,
         idPadron INTEGER,
         idTipoProblema INTEGER
@@ -104,16 +105,16 @@ class DatabaseHelper {
     }
   }
 
-  Future<int> insertOrUpdateOrdenTrabajo(OrdenTrabajo orden) async {
+  Future<int> insertOrUpdateOrdenServicio(OrdenServicio orden) async {
     final db = await database;
-    return await db.insert('ordenes_trabajo', {
-      'idOrdenTrabajo': orden.idOrdenTrabajo,
-      'folioOT': orden.folioOT,
-      'fechaOT': orden.fechaOT,
-      'medioOT': orden.medioOT,
-      'materialOT': orden.materialOT == true ? 1 : 0,
-      'estadoOT': orden.estadoOT,
-      'prioridadOT': orden.prioridadOT,
+    return await db.insert('orden_servicio', {
+      'idOrdenServicio': orden.idOrdenServicio,
+      'folioOS': orden.folioOS,
+      'fechaOS': orden.fechaOS,
+      'medioOS': orden.medioOS,
+      'materialOS': orden.materialOS == true ? 1 : 0,
+      'estadoOS': orden.estadoOS,
+      'prioridadOS': orden.prioridadOS,
       'idUser': orden.idUser,
       'idPadron': orden.idPadron,
       'idTipoProblema': orden.idTipoProblema,
@@ -167,36 +168,36 @@ class DatabaseHelper {
   }
 
   // Obtener orden de trabajo por ID
-  Future<OrdenTrabajo?> getOrdenTrabajo(int idOrdenTrabajo) async {
+  Future<OrdenServicio?> getOrdenServicio(int idOrdenServicio) async {
     final db = await database;
     try {
       final List<Map<String, dynamic>> maps = await db.query(
-        'ordenes_trabajo',
-        where: 'idOrdenTrabajo = ?',
-        whereArgs: [idOrdenTrabajo],
+        'orden_servicio',
+        where: 'idOrdenServicio = ?',
+        whereArgs: [idOrdenServicio],
         limit: 1,
       );
 
       if (maps.isNotEmpty) {
-        return OrdenTrabajo.fromMap(maps.first);
+        return OrdenServicio.fromMap(maps.first);
       }
       return null;
     } catch (e) {
-      print('Error al obtener orden de trabajo: $e');
+      print('Error al obtener orden de servicio: $e');
       return null;
     }
   }
 
-  Future<Map<int, OrdenTrabajo>> getOrdenesTrabajoCache() async {
+  Future<Map<int, OrdenServicio>> getOrdenesServicioCache() async {
     final db = await database;
     try {
-      final List<Map<String, dynamic>> maps = await db.query('ordenes_trabajo');
-      final cache = <int, OrdenTrabajo>{};
+      final List<Map<String, dynamic>> maps = await db.query('orden_servicio');
+      final cache = <int, OrdenServicio>{};
       for (var map in maps) {
         try {
-          final orden = OrdenTrabajo.fromMap(map);
-          if (orden.idOrdenTrabajo != null) {
-            cache[orden.idOrdenTrabajo!] = orden;
+          final orden = OrdenServicio.fromMap(map);
+          if (orden.idOrdenServicio != null) {
+            cache[orden.idOrdenServicio!] = orden;
           }
         } catch (e) {
           print('Error al parsear orden de trabajo: $e');
@@ -233,8 +234,9 @@ class DatabaseHelper {
         'fechaTR',
         'ubicacionTR',
         'comentarioTR',
+        'encuenstaTR',
         'idUserTR',
-        'idOrdenTrabajo',
+        'idOrdenServicio',
         'idSalida',
         'sincronizado',
         'fechaModificacion',
@@ -272,16 +274,16 @@ class DatabaseHelper {
     return await db.delete('trabajos_realizados');
   }
 
-  Future<int> clearOrdenesTrabajo() async {
+  Future<int> clearOrdenesServicio() async {
     final db = await database;
     try {
       final exists = await _ensureOrdenesTrabajoTableExists();
       if (exists) {
-        return await db.delete('ordenes_trabajo');
+        return await db.delete('orden_servicio');
       }
       return 0;
     } catch (e) {
-      print('Error clearing ordenes_trabajo: $e');
+      print('Error clearing orden_servicio: $e');
       return 0;
     }
   }

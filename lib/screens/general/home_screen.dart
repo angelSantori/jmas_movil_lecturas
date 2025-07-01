@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:jmas_movil_lecturas/configs/controllers/orden_trabajo_controller.dart';
+import 'package:jmas_movil_lecturas/configs/controllers/orden_servicio_controller.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/trabajo_realizado_controller.dart';
 import 'package:jmas_movil_lecturas/configs/service/auth_service.dart';
 import 'package:jmas_movil_lecturas/configs/service/database_helper.dart';
@@ -19,8 +19,8 @@ class _HomeScreenState extends State<HomeScreen> {
   final AuthService _authService = AuthService();
   final TrabajoRealizadoController _trabajoRealizadoController =
       TrabajoRealizadoController();
-  final OrdenTrabajoController _ordenTrabajoController =
-      OrdenTrabajoController();
+  final OrdenServicioController _ordenServicioController =
+      OrdenServicioController();
   final DatabaseHelper _dbHelper = DatabaseHelper();
 
   final GlobalKey<ScaffoldState> _scaffoldKey = GlobalKey<ScaffoldState>();
@@ -29,7 +29,7 @@ class _HomeScreenState extends State<HomeScreen> {
   int? userId;
   List<TrabajoRealizado> trabajos = [];
   bool isLoading = true;
-  Map<int, OrdenTrabajo?> otCache = {};
+  Map<int, OrdenServicio?> otCache = {};
   bool _hasDataDownloaded = false;
 
   @override
@@ -67,29 +67,29 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final listTrabajos = await _trabajoRealizadoController.getLocalTrabajos();
-      final tempCache = <int, OrdenTrabajo>{};
+      final tempCache = <int, OrdenServicio>{};
 
       // Primero cargar todas las órdenes necesarias
       for (var trabajo in listTrabajos) {
-        if (trabajo.idOrdenTrabajo != null &&
-            !tempCache.containsKey(trabajo.idOrdenTrabajo)) {
+        if (trabajo.idOrdenServicio != null &&
+            !tempCache.containsKey(trabajo.idOrdenServicio)) {
           try {
-            final orden = await _dbHelper.getOrdenTrabajo(
-              trabajo.idOrdenTrabajo!,
+            final orden = await _dbHelper.getOrdenServicio(
+              trabajo.idOrdenServicio!,
             );
             if (orden != null) {
-              tempCache[trabajo.idOrdenTrabajo!] = orden;
+              tempCache[trabajo.idOrdenServicio!] = orden;
             } else {
               // Si no está en local, obtener del servidor
-              final ordenServidor = await _ordenTrabajoController
-                  .getOrdenTrabajoXId(trabajo.idOrdenTrabajo!);
+              final ordenServidor = await _ordenServicioController
+                  .getOrdenServicioXId(trabajo.idOrdenServicio!);
               if (ordenServidor != null) {
-                await _dbHelper.insertOrUpdateOrdenTrabajo(ordenServidor);
-                tempCache[trabajo.idOrdenTrabajo!] = ordenServidor;
+                await _dbHelper.insertOrUpdateOrdenServicio(ordenServidor);
+                tempCache[trabajo.idOrdenServicio!] = ordenServidor;
               }
             }
           } catch (e) {
-            print('Error al cargar orden ${trabajo.idOrdenTrabajo}: $e');
+            print('Error al cargar orden ${trabajo.idOrdenServicio}: $e');
           }
         }
       }
@@ -103,7 +103,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     (t) =>
                         (t.fechaTR == null || t.fechaTR!.isEmpty) &&
                         (t.ubicacionTR == null || t.ubicacionTR!.isEmpty) &&
-                        t.idOrdenTrabajo != null,
+                        t.idOrdenServicio != null,
                   )
                   .toList();
           isLoading = false;
@@ -260,8 +260,8 @@ class _HomeScreenState extends State<HomeScreen> {
                 itemBuilder: (context, index) {
                   final trabajo = trabajos[index];
                   final ordenTrabajo =
-                      trabajo.idOrdenTrabajo != null
-                          ? otCache[trabajo.idOrdenTrabajo]
+                      trabajo.idOrdenServicio != null
+                          ? otCache[trabajo.idOrdenServicio]
                           : null;
 
                   return Container(
@@ -283,10 +283,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         decoration: BoxDecoration(
                           gradient: LinearGradient(
                             colors: [
-                              getEstadoColor(ordenTrabajo?.estadoOT),
+                              getEstadoColor(ordenTrabajo?.estadoOS),
                               Colors.white,
                               Colors.white,
-                              getPrioridadColor(ordenTrabajo?.prioridadOT),
+                              getPrioridadColor(ordenTrabajo?.prioridadOS),
                             ],
                             begin: Alignment.centerRight,
                             end: Alignment.centerLeft,
@@ -303,24 +303,24 @@ class _HomeScreenState extends State<HomeScreen> {
                             crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
                               Text(
-                                'Orden de trabajo: ${ordenTrabajo?.folioOT ?? 'Cargado...'}',
+                                'Orden de trabajo: ${ordenTrabajo?.folioOS ?? 'Cargado...'}',
                                 style: TextStyle(color: Colors.grey.shade900),
                               ),
                               const SizedBox(height: 4),
 
                               //Chip
                               if (ordenTrabajo != null &&
-                                  ordenTrabajo.estadoOT != null &&
-                                  ordenTrabajo.prioridadOT != null)
+                                  ordenTrabajo.estadoOS != null &&
+                                  ordenTrabajo.prioridadOS != null)
                                 Row(
                                   children: [
                                     Chip(
                                       label: Text(
-                                        ordenTrabajo.prioridadOT!,
+                                        ordenTrabajo.prioridadOS!,
                                         style: TextStyle(color: Colors.white),
                                       ),
                                       backgroundColor: getPrioridadColor(
-                                        ordenTrabajo.prioridadOT,
+                                        ordenTrabajo.prioridadOS,
                                       ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(10),
@@ -329,13 +329,13 @@ class _HomeScreenState extends State<HomeScreen> {
                                     const SizedBox(width: 8),
                                     Chip(
                                       label: Text(
-                                        ordenTrabajo.estadoOT!,
+                                        ordenTrabajo.estadoOS!,
                                         style: const TextStyle(
                                           color: Colors.white,
                                         ),
                                       ),
                                       backgroundColor: getEstadoColor(
-                                        ordenTrabajo.estadoOT,
+                                        ordenTrabajo.estadoOS,
                                       ),
                                       shape: RoundedRectangleBorder(
                                         borderRadius: BorderRadius.circular(10),
@@ -350,8 +350,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             if (ordenTrabajo == null) return;
                             final trabajoExistente = trabajos.firstWhere(
                               (t) =>
-                                  t.idOrdenTrabajo ==
-                                  ordenTrabajo.idOrdenTrabajo,
+                                  t.idOrdenServicio ==
+                                  ordenTrabajo.idOrdenServicio,
                               orElse: () => TrabajoRealizado(),
                             );
                             final result = await Navigator.push(
@@ -359,7 +359,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               MaterialPageRoute(
                                 builder:
                                     (context) => TrabajoRealizadoScreen(
-                                      ordenTrabajo: ordenTrabajo,
+                                      ordenServicio: ordenTrabajo,
                                       trabajoRealizado:
                                           trabajoExistente.idTrabajoRealizado !=
                                                   null
@@ -374,14 +374,14 @@ class _HomeScreenState extends State<HomeScreen> {
                             );
                             if (result == true) {
                               await _loadLocalTrabajos();
-                              if (ordenTrabajo.idOrdenTrabajo != null) {
+                              if (ordenTrabajo.idOrdenServicio != null) {
                                 final updateOrden =
-                                    await _ordenTrabajoController
-                                        .getOrdenTrabajoXId(
-                                          ordenTrabajo.idOrdenTrabajo!,
+                                    await _ordenServicioController
+                                        .getOrdenServicioXId(
+                                          ordenTrabajo.idOrdenServicio!,
                                         );
                                 setState(() {
-                                  otCache[ordenTrabajo.idOrdenTrabajo!] =
+                                  otCache[ordenTrabajo.idOrdenServicio!] =
                                       updateOrden;
                                 });
                               }

@@ -6,7 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/calles_controller.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/colonias_controller.dart';
-import 'package:jmas_movil_lecturas/configs/controllers/orden_trabajo_controller.dart';
+import 'package:jmas_movil_lecturas/configs/controllers/orden_servicio_controller.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/padron_controller.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/salidas_controller.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/tipo_problema_controller.dart';
@@ -18,13 +18,13 @@ import 'package:jmas_movil_lecturas/widgets/mensajes.dart';
 import 'package:path_provider/path_provider.dart';
 
 class TrabajoRealizadoScreen extends StatefulWidget {
-  final OrdenTrabajo ordenTrabajo;
+  final OrdenServicio ordenServicio;
   final TrabajoRealizado? trabajoRealizado;
   final bool isReadOnly;
 
   const TrabajoRealizadoScreen({
     super.key,
-    required this.ordenTrabajo,
+    required this.ordenServicio,
     this.trabajoRealizado,
     this.isReadOnly = false,
   });
@@ -38,8 +38,8 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
       TrabajoRealizadoController();
   final CallesController _callesController = CallesController();
   final ColoniasController _coloniasController = ColoniasController();
-  final OrdenTrabajoController _ordenTrabajoController =
-      OrdenTrabajoController();
+  final OrdenServicioController _ordenServicioController =
+      OrdenServicioController();
 
   final TextEditingController _comentarioController = TextEditingController();
 
@@ -81,15 +81,15 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
 
     try {
       // Primero intentar cargar desde la base de datos local
-      if (widget.ordenTrabajo.idPadron != null) {
+      if (widget.ordenServicio.idPadron != null) {
         _padron = await DatabaseHelper().getPadron(
-          widget.ordenTrabajo.idPadron!,
+          widget.ordenServicio.idPadron!,
         );
       }
 
-      if (widget.ordenTrabajo.idTipoProblema != null) {
+      if (widget.ordenServicio.idTipoProblema != null) {
         _tipoProblema = await DatabaseHelper().getTipoProblema(
-          widget.ordenTrabajo.idTipoProblema!,
+          widget.ordenServicio.idTipoProblema!,
         );
       }
 
@@ -104,10 +104,10 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
       }
 
       if (hasInternet) {
-        if (_padron == null && widget.ordenTrabajo.idPadron != null) {
+        if (_padron == null && widget.ordenServicio.idPadron != null) {
           try {
             _padron = await PadronController().getPadronXId(
-              widget.ordenTrabajo.idPadron!,
+              widget.ordenServicio.idPadron!,
             );
             if (_padron != null) {
               await DatabaseHelper().insertOrUpdatePadron(_padron!);
@@ -118,10 +118,10 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
         }
 
         if (_tipoProblema == null &&
-            widget.ordenTrabajo.idTipoProblema != null) {
+            widget.ordenServicio.idTipoProblema != null) {
           try {
             _tipoProblema = await TipoProblemaController().tipoProblemaXId(
-              widget.ordenTrabajo.idTipoProblema!,
+              widget.ordenServicio.idTipoProblema!,
             );
             if (_tipoProblema != null) {
               await DatabaseHelper().insertOrUpdateTipoProblema(_tipoProblema!);
@@ -272,14 +272,14 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
   }
 
   Future<void> _updateOrdenTrabajoStatus() async {
-    if (widget.ordenTrabajo.idOrdenTrabajo == null) return;
+    if (widget.ordenServicio.idOrdenServicio == null) return;
 
     try {
-      final ordenActualizada = widget.ordenTrabajo.copyWith(
-        estadoOT: 'Revisión',
+      final ordenActualizada = widget.ordenServicio.copyWith(
+        estadoOS: 'Revisión',
       );
 
-      final success = await _ordenTrabajoController.editOrdenTrabajo(
+      final success = await _ordenServicioController.editOrdenServicio(
         ordenActualizada,
       );
 
@@ -326,9 +326,10 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
         comentarioTR: _comentarioController.text,
         fotoAntes64TR: fotoAntes64,
         fotoDespues64TR: fotoDespues64,
+        encuenstaTR: 5, //TODO: MANEJO DE ESTRELLAS
         idUserTR:
             widget.trabajoRealizado?.idUserTR ?? _salida?.id_User_Asignado,
-        idOrdenTrabajo: widget.ordenTrabajo.idOrdenTrabajo,
+        idOrdenServicio: widget.ordenServicio.idOrdenServicio,
         idSalida: _salida?.id_Salida,
       );
 
@@ -347,7 +348,7 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
         await _updateOrdenTrabajoStatus();
         final directory = await getApplicationDocumentsDirectory();
         final file = File(
-          '${directory.path}/trabajo_draft_${widget.ordenTrabajo.idOrdenTrabajo}.json',
+          '${directory.path}/trabajo_draft_${widget.ordenServicio.idOrdenServicio}.json',
         );
         if (await file.exists()) await file.delete();
 
@@ -375,11 +376,11 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
     try {
       final directory = await getApplicationDocumentsDirectory();
       final file = File(
-        '${directory.path}/trabajo_draft_${widget.ordenTrabajo.idOrdenTrabajo}.json',
+        '${directory.path}/trabajo_draft_${widget.ordenServicio.idOrdenServicio}.json',
       );
 
       final draftData = {
-        'idSalida': widget.ordenTrabajo.idOrdenTrabajo,
+        'idSalida': widget.ordenServicio.idOrdenServicio,
         'comentario': _comentarioController.text,
         'ubicacion': _ubicacion,
         'fotoAntesPath': _fotoAntesPath,
@@ -467,12 +468,12 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
 
                       //Info Orden de trabajo
                       buildSectionCard(
-                        'Orden de Trabajo: ${widget.ordenTrabajo.folioOT ?? 'N/A'}',
+                        'Orden de Trabajo: ${widget.ordenServicio.folioOS ?? 'N/A'}',
                         [
                           const SizedBox(height: 8),
                           buildInfoItem(
                             'Problema',
-                            '${_tipoProblema!.nombreTP ?? 'N/A'} - (${widget.ordenTrabajo.idTipoProblema ?? 0})',
+                            '${_tipoProblema!.nombreTP ?? 'N/A'} - (${widget.ordenServicio.idTipoProblema ?? 0})',
                           ),
                         ],
                       ),
