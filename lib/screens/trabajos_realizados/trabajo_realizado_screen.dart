@@ -56,13 +56,20 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
   Padron? _padron;
   TipoProblema? _tipoProblema;
 
+  int _rating = 0;
+
   @override
   void initState() {
     super.initState();
     _getCurrentLocation();
     _loadInitialData();
     _loadCalleColoniaNames();
-    _comentarioController.addListener(_saveDraftData);
+    _comentarioController.addListener(() {
+      _saveDraftData();
+      if (_fotoAntesPath != null && _fotoDespuesPath != null) {
+        setState(() {});
+      }
+    });
 
     // Determinar si hay datos existentes completos
     _hasExistingData =
@@ -138,6 +145,7 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
         _comentarioController.text =
             widget.trabajoRealizado!.comentarioTR ?? '';
         _ubicacion = widget.trabajoRealizado!.ubicacionTR;
+        _rating = widget.trabajoRealizado!.encuenstaTR ?? 0;
 
         // Cargar fotos desde base64 si existen
         if (widget.trabajoRealizado!.fotoAntes64TR != null &&
@@ -326,7 +334,7 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
         comentarioTR: _comentarioController.text,
         fotoAntes64TR: fotoAntes64,
         fotoDespues64TR: fotoDespues64,
-        encuenstaTR: 5, //TODO: MANEJO DE ESTRELLAS
+        encuenstaTR: _rating,
         idUserTR:
             widget.trabajoRealizado?.idUserTR ?? _salida?.id_User_Asignado,
         idOrdenServicio: widget.ordenServicio.idOrdenServicio,
@@ -416,6 +424,11 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
   @override
   Widget build(BuildContext context) {
     final isEditable = !widget.isReadOnly && !_isTrabajoCompleto;
+    final showRating =
+        (_fotoAntesPath != null &&
+            _fotoDespuesPath != null &&
+            _comentarioController.text.isNotEmpty) ||
+        widget.isReadOnly;
 
     return Scaffold(
       appBar: AppBar(
@@ -531,8 +544,36 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
                       ),
                       const SizedBox(height: 24),
 
+                      //  Rating
+                      if (showRating || widget.isReadOnly)
+                        Column(
+                          children: [
+                            const Text(
+                              'Calificación del trabajo',
+                              style: TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                            const SizedBox(height: 8),
+                            StarRating(
+                              rating: _rating,
+                              onRatingChanged:
+                                  isEditable
+                                      ? ((rating) {
+                                        setState(() {
+                                          _rating = rating;
+                                        });
+                                      })
+                                      : null,
+                              interactive: isEditable,
+                            ),
+                            const SizedBox(height: 16),
+                          ],
+                        ),
+
                       // Botón de enviar
-                      if (isEditable)
+                      if (isEditable && showRating)
                         Center(
                           child: SizedBox(
                             width: 150,

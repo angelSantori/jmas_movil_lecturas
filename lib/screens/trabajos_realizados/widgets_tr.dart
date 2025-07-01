@@ -183,3 +183,39 @@ Future<Size> _getImageSize(String imagePath) async {
 
   return completer.future;
 }
+
+//  Estrellas
+class StarRating extends StatelessWidget {
+  final int rating;
+  final ValueChanged<int>? onRatingChanged;
+  final double starSize;
+  final bool interactive;
+
+  const StarRating({
+    super.key,
+    required this.rating,
+    this.onRatingChanged,
+    this.starSize = 32.0,
+    this.interactive = true,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisAlignment: MainAxisAlignment.center,
+      children: List.generate(5, (index) {
+        return GestureDetector(
+          onTap:
+              interactive && onRatingChanged != null
+                  ? () => onRatingChanged!(index + 1)
+                  : null,
+          child: Icon(
+            index < rating ? Icons.star : Icons.star_border,
+            color: Colors.amber,
+            size: starSize,
+          ),
+        );
+      }),
+    );
+  }
+}
