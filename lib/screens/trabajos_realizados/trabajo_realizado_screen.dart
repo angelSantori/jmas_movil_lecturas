@@ -429,6 +429,11 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
             _fotoDespuesPath != null &&
             _comentarioController.text.isNotEmpty) ||
         widget.isReadOnly;
+    final showButton =
+        (_fotoAntesPath != null ||
+            _fotoDespuesPath != null ||
+            _comentarioController.text.isNotEmpty) ||
+        widget.isReadOnly;
 
     return Scaffold(
       appBar: AppBar(
@@ -573,7 +578,7 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
                         ),
 
                       // Botón de enviar
-                      if (isEditable && showRating)
+                      if (isEditable && showButton)
                         Center(
                           child: SizedBox(
                             width: 150,

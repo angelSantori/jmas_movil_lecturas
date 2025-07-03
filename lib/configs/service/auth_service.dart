@@ -10,8 +10,8 @@ class AuthService {
   //final String apiURL = 'http://200.200.200.155:5000/api';
   //final String apiURL = 'https://jmasapi.up.railway.app/api';
   //final String apiURL = 'http://192.168.0.15:8080/api';
-  final String apiURL = 'https://192.168.0.5:5001/api';
-  //final String apiURL = 'https://200.200.200.198:5001/api';
+  final String apiURL = 'https://192.168.0.6:5001/api';
+  //final String apiURL = 'https://200.200.200.176:5001/api';
 
   Users? _currentUser;
 
