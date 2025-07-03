@@ -49,14 +49,14 @@ class DatabaseHelper {
           idOrdenServicio INTEGER PRIMARY KEY,
           folioOS TEXT,
           fechaOS TEXT,
-          medioOS TEXT,
           materialOS INTEGER,
           estadoOS TEXT,
           prioridadOS TEXT,
           contactoOS INTEGER,
           idUser INTEGER,
           idPadron INTEGER,
-          idTipoProblema INTEGER
+          idTipoProblema INTEGER,
+          idMedio INTEGER
         )
       ''');
 
@@ -100,7 +100,8 @@ class DatabaseHelper {
         contactoOS INTEGER,
         idUser INTEGER,
         idPadron INTEGER,
-        idTipoProblema INTEGER
+        idTipoProblema INTEGER,
+        idMedio INTEGER
       )
     ''');
       return false;
@@ -113,7 +114,6 @@ class DatabaseHelper {
       'idOrdenServicio': orden.idOrdenServicio,
       'folioOS': orden.folioOS,
       'fechaOS': orden.fechaOS,
-      'medioOS': orden.medioOS,
       'materialOS': orden.materialOS == true ? 1 : 0,
       'estadoOS': orden.estadoOS,
       'prioridadOS': orden.prioridadOS,
@@ -121,6 +121,7 @@ class DatabaseHelper {
       'idUser': orden.idUser,
       'idPadron': orden.idPadron,
       'idTipoProblema': orden.idTipoProblema,
+      'idMedio': orden.idMedio,
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
