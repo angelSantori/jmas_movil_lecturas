@@ -348,12 +348,8 @@ class _HomeScreenState extends State<HomeScreen> {
                           trailing: const Icon(Icons.chevron_right),
                           onTap: () async {
                             if (ordenTrabajo == null) return;
-                            final trabajoExistente = trabajos.firstWhere(
-                              (t) =>
-                                  t.idOrdenServicio ==
-                                  ordenTrabajo.idOrdenServicio,
-                              orElse: () => TrabajoRealizado(),
-                            );
+                            final trabajoEspecifico = trabajo;
+
                             final result = await Navigator.push(
                               context,
                               MaterialPageRoute(
@@ -361,12 +357,12 @@ class _HomeScreenState extends State<HomeScreen> {
                                     (context) => TrabajoRealizadoScreen(
                                       ordenServicio: ordenTrabajo,
                                       trabajoRealizado:
-                                          trabajoExistente.idTrabajoRealizado !=
+                                          trabajoEspecifico.idTrabajoRealizado !=
                                                   null
-                                              ? trabajoExistente
+                                              ? trabajoEspecifico
                                               : null,
                                       isReadOnly:
-                                          trabajoExistente.ubicacionTR != null
+                                          trabajoEspecifico.ubicacionTR != null
                                               ? true
                                               : false,
                                     ),
