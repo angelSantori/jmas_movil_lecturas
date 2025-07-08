@@ -1,5 +1,6 @@
 import 'dart:async';
-import 'dart:io';
+import 'dart:convert';
+import 'dart:typed_data';
 
 import 'package:flutter/material.dart';
 
@@ -79,7 +80,8 @@ Widget buildSectionCard(String title, List<Widget> children) {
 
 Widget buildPhotoSection(
   String title,
-  String? imagePath,
+  String?
+  imageData, // Cambiado de imagePath a imageData para reflejar que puede ser base64
   VoidCallback? onTap, {
   bool isEditable = true,
 }) {
@@ -104,7 +106,7 @@ Widget buildPhotoSection(
             color: !isEditable ? Colors.grey.shade100 : Colors.grey.shade50,
           ),
           child:
-              imagePath == null
+              imageData == null
                   ? Center(
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -125,52 +127,87 @@ Widget buildPhotoSection(
                       ],
                     ),
                   )
-                  : FutureBuilder<Size>(
-                    future: _getImageSize(imagePath),
-                    builder: (context, snapshot) {
-                      if (!snapshot.hasData) {
-                        return const Center(child: CircularProgressIndicator());
-                      }
-
-                      final size = snapshot.data!;
-                      final aspectRatio = size.width / size.height;
-
-                      return Stack(
-                        children: [
-                          AspectRatio(
-                            aspectRatio: aspectRatio,
-                            child: Image.file(
-                              File(imagePath),
-                              fit: BoxFit.cover,
-                            ),
-                          ),
-                          if (!isEditable)
-                            Container(
-                              color: Colors.black.withOpacity(0.3),
-                              child: const Center(
-                                child: Icon(
-                                  Icons.lock_outline,
-                                  color: Colors.white,
-                                  size: 40,
-                                ),
-                              ),
-                            ),
-                        ],
-                      );
-                    },
-                  ),
+                  : _buildImageWidget(imageData, isEditable),
         ),
       ),
     ],
   );
 }
 
-Future<Size> _getImageSize(String imagePath) async {
-  final completer = Completer<Size>();
-  final file = File(imagePath);
-  final bytes = await file.readAsBytes();
+Widget _buildImageWidget(String imageData, bool isEditable) {
+  try {
+    // Verificar si es base64 válido
+    if (!RegExp(r'^[a-zA-Z0-9+/]+={0,2}$').hasMatch(imageData)) {
+      throw 'Formato de imagen no válido';
+    }
 
-  Image image = Image.memory(bytes);
+    final bytes = base64Decode(imageData);
+    return FutureBuilder<Size>(
+      future: _getImageSizeFromBytes(bytes),
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Center(child: CircularProgressIndicator());
+        }
+
+        if (snapshot.hasError) {
+          return const Center(child: Icon(Icons.error, color: Colors.red));
+        }
+
+        final size = snapshot.data ?? const Size(100, 100);
+        // ignore: unused_local_variable
+        final aspectRatio = size.width / size.height;
+
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            ClipRRect(
+              borderRadius: BorderRadius.circular(8),
+              child: Image.memory(
+                bytes,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Center(
+                    child: Icon(Icons.error, color: Colors.red),
+                  );
+                },
+              ),
+            ),
+            if (!isEditable)
+              Container(
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Center(
+                  child: Icon(
+                    Icons.lock_outline,
+                    color: Colors.white,
+                    size: 40,
+                  ),
+                ),
+              ),
+          ],
+        );
+      },
+    );
+  } catch (e) {
+    print('Error al mostrar imagen: $e');
+    return const Center(
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          Icon(Icons.error, color: Colors.red, size: 40),
+          SizedBox(height: 8),
+          Text('Error al cargar imagen', style: TextStyle(color: Colors.red)),
+        ],
+      ),
+    );
+  }
+}
+
+Future<Size> _getImageSizeFromBytes(Uint8List bytes) async {
+  final Completer<Size> completer = Completer();
+  final image = Image.memory(bytes);
   image.image
       .resolve(const ImageConfiguration())
       .addListener(
@@ -180,7 +217,6 @@ Future<Size> _getImageSize(String imagePath) async {
           );
         }),
       );
-
   return completer.future;
 }
 

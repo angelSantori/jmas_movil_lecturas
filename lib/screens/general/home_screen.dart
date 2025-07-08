@@ -67,9 +67,28 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final listTrabajos = await _trabajoRealizadoController.getLocalTrabajos();
+      // Debug: Mostrar información de los trabajos cargados
+      print('Trabajos cargados: ${listTrabajos.length}');
+      for (var trabajo in listTrabajos) {
+        print('TR ${trabajo.folioTR}:');
+        print(
+          ' - Foto antes: ${trabajo.fotoAntes64TR?.substring(0, 20)}... (longitud: ${trabajo.fotoAntes64TR?.length})',
+        );
+        print(
+          ' - Foto después: ${trabajo.fotoDespues64TR?.substring(0, 20)}... (longitud: ${trabajo.fotoDespues64TR?.length})',
+        );
+      }
       if (mounted) {
         setState(() {
-          trabajos = listTrabajos;
+          trabajos =
+              listTrabajos
+                  .where(
+                    (t) =>
+                        (t.fechaTR == null || t.fechaTR!.isEmpty) &&
+                        (t.ubicacionTR == null || t.ubicacionTR!.isEmpty) &&
+                        t.idOrdenServicio != null,
+                  )
+                  .toList();
           isLoading = false;
         });
       }

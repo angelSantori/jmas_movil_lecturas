@@ -7,6 +7,7 @@ import 'package:intl/intl.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/orden_servicio_controller.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/salidas_controller.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/trabajo_realizado_controller.dart';
+import 'package:jmas_movil_lecturas/configs/service/database_helper.dart';
 import 'package:jmas_movil_lecturas/screens/trabajos_realizados/widgets_tr.dart';
 import 'package:jmas_movil_lecturas/widgets/formularios.dart';
 import 'package:jmas_movil_lecturas/widgets/mensajes.dart';
@@ -29,11 +30,6 @@ class TrabajoRealizadoScreen extends StatefulWidget {
 }
 
 class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
-  final TrabajoRealizadoController _trabajoRealizadoController =
-      TrabajoRealizadoController();
-  final OrdenServicioController _ordenServicioController =
-      OrdenServicioController();
-
   final TextEditingController _comentarioController = TextEditingController();
 
   String? _ubicacion;
@@ -53,34 +49,59 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
     super.initState();
     _getCurrentLocation();
     _loadInitialData();
-    _comentarioController.addListener(() {
-      _saveDraftData();
-      if (_fotoAntesPath != null && _fotoDespuesPath != null) {
-        setState(() {});
-      }
-    });
+    _comentarioController.addListener(_saveDraftData);
+    _loadDraftData();
+  }
 
-    // Inicializar con datos del trabajo si existe
-    if (widget.trabajoRealizado != null) {
-      _comentarioController.text = widget.trabajoRealizado!.comentarioTR ?? '';
-      _ubicacion = widget.trabajoRealizado!.ubicacionTR;
-      _rating = widget.trabajoRealizado!.encuenstaTR ?? 0;
+  Future<void> _loadDraftData() async {
+    try {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File(
+        '${directory.path}/trabajo_draft_${widget.ordenServicio.idOrdenServicio}.json',
+      );
 
-      // Cargar fotos si existen
-      if (widget.trabajoRealizado!.fotoAntes64TR != null &&
-          widget.trabajoRealizado!.fotoAntes64TR!.isNotEmpty) {
-        _fotoAntesPath = widget.trabajoRealizado!.fotoAntes64TR;
+      if (await file.exists()) {
+        final draftData = json.decode(await file.readAsString());
+
+        setState(() {
+          _comentarioController.text = draftData['comentario'] ?? '';
+          _ubicacion = draftData['ubicacion'] ?? _ubicacion;
+          _fotoAntesPath = draftData['fotoAntesPath'];
+          _fotoDespuesPath = draftData['fotoDespuesPath'];
+          _rating = draftData['rating'] ?? 0;
+        });
+
+        print('Borrador cargado: $draftData');
       }
-      if (widget.trabajoRealizado!.fotoDespues64TR != null &&
-          widget.trabajoRealizado!.fotoDespues64TR!.isNotEmpty) {
-        _fotoDespuesPath = widget.trabajoRealizado!.fotoDespues64TR;
-      }
+    } catch (e) {
+      print('Error cargando borrador: $e');
     }
   }
 
   Future<void> _loadInitialData() async {
     setState(() => _isLoading = true);
 
+    // Cargar datos existentes si hay un trabajo realizado
+    if (widget.trabajoRealizado != null) {
+      _comentarioController.text = widget.trabajoRealizado!.comentarioTR ?? '';
+      _ubicacion = widget.trabajoRealizado!.ubicacionTR;
+      _rating = widget.trabajoRealizado!.encuenstaTR ?? 0;
+
+      // Asegurarse de cargar las fotos correctamente
+      _fotoAntesPath = widget.trabajoRealizado!.fotoAntes64TR;
+      _fotoDespuesPath = widget.trabajoRealizado!.fotoDespues64TR;
+
+      // Debug
+      print('Fotos cargadas en initState:');
+      print(
+        'Antes: ${_fotoAntesPath != null ? "disponible" : "no disponible"}',
+      );
+      print(
+        'Después: ${_fotoDespuesPath != null ? "disponible" : "no disponible"}',
+      );
+    }
+
+    // Obtener ubicación si no hay datos existentes
     if (widget.trabajoRealizado == null ||
         widget.trabajoRealizado!.ubicacionTR == null ||
         widget.trabajoRealizado!.ubicacionTR!.isEmpty) {
@@ -127,144 +148,108 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
     if (_hasExistingData || widget.isReadOnly) return;
 
     final picker = ImagePicker();
-    final pickedFile = await picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 70,
-    );
-
-    if (pickedFile != null) {
-      final directory = await getApplicationDocumentsDirectory();
-      final fileName =
-          '${isBefore ? 'antes' : 'despues'}_${DateTime.now().millisecondsSinceEpoch}.jpg';
-      final savedImage = await File(
-        pickedFile.path,
-      ).copy('${directory.path}/$fileName');
-
-      setState(() {
-        if (isBefore) {
-          _fotoAntesPath = savedImage.path;
-        } else {
-          _fotoDespuesPath = savedImage.path;
-        }
-      });
-
-      await _saveDraftData();
-    }
-  }
-
-  Future<String?> _getImageBase64(String? imagePath) async {
-    if (imagePath == null) return null;
-
     try {
-      final file = File(imagePath);
-      if (await file.exists()) {
-        final bytes = await file.readAsBytes();
-        return base64Encode(bytes);
-      }
-    } catch (e) {
-      print('Error converting image to base64: $e');
-    }
-    return null;
-  }
-
-  Future<void> _updateOrdenTrabajoStatus() async {
-    if (widget.ordenServicio.idOrdenServicio == null) return;
-
-    try {
-      final ordenActualizada = widget.ordenServicio.copyWith(
-        estadoOS: 'Revisión',
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 70,
+        maxWidth: 1024, // Limitar tamaño para evitar problemas de memoria
       );
 
-      final success = await _ordenServicioController.editOrdenServicio(
-        ordenActualizada,
-      );
+      if (pickedFile != null) {
+        setState(() => _isLoading = true);
 
-      if (success && mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Estado actualizado correctamente')),
+        // Convertir a base64
+        final bytes = await pickedFile.readAsBytes();
+        final base64Image = base64Encode(bytes);
+
+        // Actualizar estado
+        setState(() {
+          if (isBefore) {
+            _fotoAntesPath = base64Image;
+          } else {
+            _fotoDespuesPath = base64Image;
+          }
+          _isLoading = false;
+        });
+
+        // Guardar borrador
+        await _saveDraftData();
+
+        print(
+          'Foto ${isBefore ? 'antes' : 'después'} guardada (tamaño: ${base64Image.length} caracteres)',
         );
       }
     } catch (e) {
-      print('Error al actualizar estado de orden de trabajo: $e');
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Error al actualizar estado: $e')),
-        );
-      }
+      setState(() => _isLoading = false);
+      print('Error al tomar foto: $e');
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(SnackBar(content: Text('Error al tomar foto: $e')));
     }
   }
 
   Future<void> _submitForm() async {
-    if (!_formKey.currentState!.validate() || widget.isReadOnly) return;
+    if (widget.isReadOnly) return;
 
     setState(() => _isLoading = true);
 
     try {
+      // Validar solo comentario como requerido
+      if (_comentarioController.text.isEmpty) {
+        showAdvertence(context, 'Debes agregar un comentario');
+        return;
+      }
+
+      // Obtener ubicación actual
       await _getCurrentLocation();
       if (_ubicacion == null) {
         throw 'No se pudo obtener la ubicación actual';
       }
 
-      final fotoAntes64 = await _getImageBase64(_fotoAntesPath);
-      final fotoDespues64 = await _getImageBase64(_fotoDespuesPath);
-
-      if (fotoAntes64 == null || fotoDespues64 == null) {
-        if (!mounted) return;
-        showAdvertence(context, 'Debes tomar ambas fotos (antes y después)');
-        return;
-      }
-
+      // Crear objeto TrabajoRealizado
       final trabajo = TrabajoRealizado(
         idTrabajoRealizado: widget.trabajoRealizado?.idTrabajoRealizado ?? 0,
         folioTR: widget.trabajoRealizado?.folioTR,
         fechaTR: DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now()),
         ubicacionTR: _ubicacion!,
         comentarioTR: _comentarioController.text,
-        fotoAntes64TR: fotoAntes64,
-        fotoDespues64TR: fotoDespues64,
+        fotoAntes64TR: _fotoAntesPath, // Puede ser null
+        fotoDespues64TR: _fotoDespuesPath, // Puede ser null
         encuenstaTR: _rating,
         idUserTR:
             widget.trabajoRealizado?.idUserTR ?? _salida?.id_User_Asignado,
         idOrdenServicio: widget.ordenServicio.idOrdenServicio,
         idSalida: _salida?.id_Salida,
+        // Mantener campos adicionales
+        folioOS: widget.trabajoRealizado?.folioOS,
+        padronNombre: widget.trabajoRealizado?.padronNombre,
+        padronDireccion: widget.trabajoRealizado?.padronDireccion,
+        problemaNombre: widget.trabajoRealizado?.problemaNombre,
       );
 
-      bool success;
-      if (widget.trabajoRealizado?.idTrabajoRealizado != null) {
-        success = await _trabajoRealizadoController.editTrabajoRealizado(
-          trabajo,
-        );
-      } else {
-        success = await _trabajoRealizadoController.addTrabajoRealizado(
-          trabajo,
-        );
-      }
+      // Guardar en base de datos local
+      final dbHelper = DatabaseHelper();
+      await dbHelper.insertTrabajo(trabajo);
 
-      if (success) {
-        await _updateOrdenTrabajoStatus();
-        final directory = await getApplicationDocumentsDirectory();
-        final file = File(
-          '${directory.path}/trabajo_draft_${widget.ordenServicio.idOrdenServicio}.json',
-        );
-        if (await file.exists()) await file.delete();
+      // Eliminar borrador
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File(
+        '${directory.path}/trabajo_draft_${widget.ordenServicio.idOrdenServicio}.json',
+      );
+      if (await file.exists()) await file.delete();
 
-        if (!mounted) return;
-        Navigator.pop(context, true);
-      } else {
-        // Si no tuvo éxito pero se guardó localmente
-        if (!mounted) return;
-        Navigator.pop(context, true);
-        showOk(
-          context,
-          'Datos guardados localmente para sincronización posterior',
-        );
-      }
+      if (!mounted) return;
+      showOk(context, 'Progreso guardado correctamente');
+      Navigator.pop(context, true);
     } catch (e) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(SnackBar(content: Text(e.toString())));
+      print('Error al guardar trabajo: $e');
+      if (mounted) {
+        showError(context, 'Error: ${e.toString()}');
+      }
     } finally {
-      setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
@@ -276,29 +261,27 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
       );
 
       final draftData = {
-        'idSalida': widget.ordenServicio.idOrdenServicio,
+        'idOrdenServicio': widget.ordenServicio.idOrdenServicio,
         'comentario': _comentarioController.text,
         'ubicacion': _ubicacion,
         'fotoAntesPath': _fotoAntesPath,
         'fotoDespuesPath': _fotoDespuesPath,
+        'rating': _rating,
         'timestamp': DateTime.now().toIso8601String(),
       };
 
       await file.writeAsString(json.encode(draftData));
+      print('Borrador guardado: ${file.path}');
     } catch (e) {
       print('Error saving draft data: $e');
     }
   }
 
   bool get _isTrabajoCompleto {
-    return widget.trabajoRealizado != null &&
-        widget.trabajoRealizado!.fotoAntes64TR != null &&
-        widget.trabajoRealizado!.fotoAntes64TR!.isNotEmpty &&
-        widget.trabajoRealizado!.fotoDespues64TR != null &&
-        widget.trabajoRealizado!.fotoDespues64TR!.isNotEmpty &&
-        widget.trabajoRealizado!.ubicacionTR != null &&
-        widget.trabajoRealizado!.comentarioTR != null &&
-        widget.trabajoRealizado!.comentarioTR!.isNotEmpty;
+    // Solo considerar completo si tiene ambas fotos
+    return widget.isReadOnly ||
+        (widget.trabajoRealizado?.fotoAntes64TR != null &&
+            widget.trabajoRealizado?.fotoDespues64TR != null);
   }
 
   @override
@@ -315,11 +298,6 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
     final showRating =
         (_fotoAntesPath != null &&
             _fotoDespuesPath != null &&
-            _comentarioController.text.isNotEmpty) ||
-        widget.isReadOnly;
-    final showButton =
-        (_fotoAntesPath != null ||
-            _fotoDespuesPath != null ||
             _comentarioController.text.isNotEmpty) ||
         widget.isReadOnly;
 
@@ -467,33 +445,27 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
                         ),
 
                       // Botón de enviar
-                      if (isEditable && showButton)
-                        Center(
-                          child: SizedBox(
-                            width: 150,
-                            child: ElevatedButton(
-                              onPressed: _submitForm,
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: Colors.blue.shade900,
-                                padding: const EdgeInsets.symmetric(
-                                  vertical: 16,
-                                ),
-                                elevation: 4,
-                                shadowColor: Colors.blue.shade900,
-                              ),
-                              child: Text(
-                                widget.trabajoRealizado?.idTrabajoRealizado !=
-                                        null
-                                    ? 'Registrar Trabajo'
-                                    : 'Registrar Trabajo',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 16,
-                                ),
+                      Center(
+                        child: SizedBox(
+                          width: 150,
+                          child: ElevatedButton(
+                            onPressed: _submitForm,
+                            style: ElevatedButton.styleFrom(
+                              backgroundColor: Colors.blue.shade900,
+                              padding: const EdgeInsets.symmetric(vertical: 16),
+                              elevation: 4,
+                              shadowColor: Colors.blue.shade900,
+                            ),
+                            child: const Text(
+                              'Guardar Localmente',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 16,
                               ),
                             ),
                           ),
                         ),
+                      ),
                       const SizedBox(height: 50),
                     ],
                   ),

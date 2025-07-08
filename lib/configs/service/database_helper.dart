@@ -62,7 +62,7 @@ class DatabaseHelper {
         )
       ''');
       },
-      version: 13,
+      version: 14,
     );
   }
 
