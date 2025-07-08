@@ -67,6 +67,12 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final listTrabajos = await _trabajoRealizadoController.getLocalTrabajos();
+      if (mounted) {
+        setState(() {
+          trabajos = listTrabajos;
+          isLoading = false;
+        });
+      }
       final tempCache = <int, OrdenServicio>{};
 
       // Primero cargar todas las órdenes necesarias
@@ -357,7 +363,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                     (context) => TrabajoRealizadoScreen(
                                       ordenServicio: ordenTrabajo,
                                       trabajoRealizado:
-                                          trabajoEspecifico.idTrabajoRealizado !=
+                                          trabajoEspecifico
+                                                      .idTrabajoRealizado !=
                                                   null
                                               ? trabajoEspecifico
                                               : null,

@@ -4,14 +4,9 @@ import 'package:flutter/material.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:intl/intl.dart';
-import 'package:jmas_movil_lecturas/configs/controllers/calles_controller.dart';
-import 'package:jmas_movil_lecturas/configs/controllers/colonias_controller.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/orden_servicio_controller.dart';
-import 'package:jmas_movil_lecturas/configs/controllers/padron_controller.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/salidas_controller.dart';
-import 'package:jmas_movil_lecturas/configs/controllers/tipo_problema_controller.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/trabajo_realizado_controller.dart';
-import 'package:jmas_movil_lecturas/configs/service/database_helper.dart';
 import 'package:jmas_movil_lecturas/screens/trabajos_realizados/widgets_tr.dart';
 import 'package:jmas_movil_lecturas/widgets/formularios.dart';
 import 'package:jmas_movil_lecturas/widgets/mensajes.dart';
@@ -36,8 +31,6 @@ class TrabajoRealizadoScreen extends StatefulWidget {
 class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
   final TrabajoRealizadoController _trabajoRealizadoController =
       TrabajoRealizadoController();
-  final CallesController _callesController = CallesController();
-  final ColoniasController _coloniasController = ColoniasController();
   final OrdenServicioController _ordenServicioController =
       OrdenServicioController();
 
@@ -53,9 +46,6 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
   final _formKey = GlobalKey<FormState>();
   bool _hasExistingData = false;
 
-  Padron? _padron;
-  TipoProblema? _tipoProblema;
-
   int _rating = 0;
 
   @override
@@ -63,7 +53,6 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
     super.initState();
     _getCurrentLocation();
     _loadInitialData();
-    _loadCalleColoniaNames();
     _comentarioController.addListener(() {
       _saveDraftData();
       if (_fotoAntesPath != null && _fotoDespuesPath != null) {
@@ -71,135 +60,34 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
       }
     });
 
-    // Determinar si hay datos existentes completos
-    _hasExistingData =
-        widget.trabajoRealizado != null &&
-        widget.trabajoRealizado!.idTrabajoRealizado != null &&
-        widget.trabajoRealizado!.fotoAntes64TR != null &&
-        widget.trabajoRealizado!.fotoAntes64TR!.isNotEmpty &&
-        widget.trabajoRealizado!.fotoDespues64TR != null &&
-        widget.trabajoRealizado!.fotoDespues64TR!.isNotEmpty &&
-        widget.trabajoRealizado!.ubicacionTR != null &&
-        widget.trabajoRealizado!.comentarioTR != null;
+    // Inicializar con datos del trabajo si existe
+    if (widget.trabajoRealizado != null) {
+      _comentarioController.text = widget.trabajoRealizado!.comentarioTR ?? '';
+      _ubicacion = widget.trabajoRealizado!.ubicacionTR;
+      _rating = widget.trabajoRealizado!.encuenstaTR ?? 0;
+
+      // Cargar fotos si existen
+      if (widget.trabajoRealizado!.fotoAntes64TR != null &&
+          widget.trabajoRealizado!.fotoAntes64TR!.isNotEmpty) {
+        _fotoAntesPath = widget.trabajoRealizado!.fotoAntes64TR;
+      }
+      if (widget.trabajoRealizado!.fotoDespues64TR != null &&
+          widget.trabajoRealizado!.fotoDespues64TR!.isNotEmpty) {
+        _fotoDespuesPath = widget.trabajoRealizado!.fotoDespues64TR;
+      }
+    }
   }
 
   Future<void> _loadInitialData() async {
     setState(() => _isLoading = true);
 
-    try {
-      // Primero intentar cargar desde la base de datos local
-      if (widget.ordenServicio.idPadron != null) {
-        _padron = await DatabaseHelper().getPadron(
-          widget.ordenServicio.idPadron!,
-        );
-      }
-
-      if (widget.ordenServicio.idTipoProblema != null) {
-        _tipoProblema = await DatabaseHelper().getTipoProblema(
-          widget.ordenServicio.idTipoProblema!,
-        );
-      }
-
-      // Si no se encontraron datos locales, intentar obtener del servidor
-      bool hasInternet = true;
-      try {
-        // Verificar conexión a internet
-        final result = await InternetAddress.lookup('example.com');
-        hasInternet = result.isNotEmpty && result[0].rawAddress.isNotEmpty;
-      } catch (_) {
-        hasInternet = false;
-      }
-
-      if (hasInternet) {
-        if (_padron == null && widget.ordenServicio.idPadron != null) {
-          try {
-            _padron = await PadronController().getPadronXId(
-              widget.ordenServicio.idPadron!,
-            );
-            if (_padron != null) {
-              await DatabaseHelper().insertOrUpdatePadron(_padron!);
-            }
-          } catch (e) {
-            print('Error al obtener padron del servidor: $e');
-          }
-        }
-
-        if (_tipoProblema == null &&
-            widget.ordenServicio.idTipoProblema != null) {
-          try {
-            _tipoProblema = await TipoProblemaController().tipoProblemaXId(
-              widget.ordenServicio.idTipoProblema!,
-            );
-            if (_tipoProblema != null) {
-              await DatabaseHelper().insertOrUpdateTipoProblema(_tipoProblema!);
-            }
-          } catch (e) {
-            print('Error al obtener tipo problema del servidor: $e');
-          }
-        }
-      }
-
-      // Verificar si hay un trabajo existente para editar
-      if (widget.trabajoRealizado != null &&
-          widget.trabajoRealizado!.idTrabajoRealizado != null) {
-        _comentarioController.text =
-            widget.trabajoRealizado!.comentarioTR ?? '';
-        _ubicacion = widget.trabajoRealizado!.ubicacionTR;
-        _rating = widget.trabajoRealizado!.encuenstaTR ?? 0;
-
-        // Cargar fotos desde base64 si existen
-        if (widget.trabajoRealizado!.fotoAntes64TR != null &&
-            widget.trabajoRealizado!.fotoAntes64TR!.isNotEmpty) {
-          final directory = await getApplicationCacheDirectory();
-          final filePath =
-              '${directory.path}/antes_${widget.trabajoRealizado!.idTrabajoRealizado}.jpg';
-          await File(
-            filePath,
-          ).writeAsBytes(base64Decode(widget.trabajoRealizado!.fotoAntes64TR!));
-          _fotoAntesPath = filePath;
-        }
-
-        if (widget.trabajoRealizado!.fotoDespues64TR != null &&
-            widget.trabajoRealizado!.fotoDespues64TR!.isNotEmpty) {
-          final directory = await getApplicationDocumentsDirectory();
-          final filePath =
-              '${directory.path}/despues_${widget.trabajoRealizado!.idTrabajoRealizado}.jpg';
-          await File(filePath).writeAsBytes(
-            base64Decode(widget.trabajoRealizado!.fotoDespues64TR!),
-          );
-          _fotoDespuesPath = filePath;
-        }
-      } else {
-        // Solo cargar ubicación si es un nuevo registro
-        await _getCurrentLocation();
-      }
-    } catch (e) {
-      print('Error al cargar datos iniciales: $e');
-    } finally {
-      setState(() => _isLoading = false);
-    }
-  }
-
-  Future<void> _loadCalleColoniaNames() async {
-    if (_salida?.idCalle != null) {
-      final calle = await _callesController.getCalleXId(_salida!.idCalle!);
-      if (calle != null) {
-        setState(() {
-          _nombreCalle = calle.calleNombre;
-        });
-      }
+    if (widget.trabajoRealizado == null ||
+        widget.trabajoRealizado!.ubicacionTR == null ||
+        widget.trabajoRealizado!.ubicacionTR!.isEmpty) {
+      await _getCurrentLocation();
     }
 
-    if (_salida?.idColonia != null) {
-      final colonia = await _coloniasController.getColoniaXId(
-        _salida!.idColonia!,
-      );
-      if (colonia != null) {
-        setState(() {
-          _nombreColonia = colonia.nombreColonia;
-        });
-      }
-    }
+    setState(() => _isLoading = false);
   }
 
   Future<void> _getCurrentLocation() async {
@@ -450,19 +338,33 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      if (_padron != null) ...[
-                        buildSectionCard('Padron: ${_padron!.idPadron}', [
+                      if (widget.trabajoRealizado != null) ...[
+                        //  Padron
+                        buildSectionCard('Padron', [
                           buildInfoItem(
-                            'Padron',
-                            _padron!.padronNombre ?? 'N/A',
+                            'Nombre',
+                            widget.trabajoRealizado?.padronNombre ?? 'N/A',
                           ),
                           const SizedBox(height: 8),
                           buildInfoItem(
                             'Dirección',
-                            _padron!.padronDireccion ?? 'N/A',
+                            widget.trabajoRealizado?.padronDireccion ?? 'N/A',
                           ),
                         ]),
                         const SizedBox(height: 8),
+
+                        //  Orden Trabajo
+                        buildSectionCard('Orden de Trabajo', [
+                          buildInfoItem(
+                            'Folio',
+                            widget.trabajoRealizado?.folioOS ?? 'N/A',
+                          ),
+                          const SizedBox(height: 8),
+                          buildInfoItem(
+                            'Problema',
+                            widget.trabajoRealizado?.problemaNombre ?? 'N/A',
+                          ),
+                        ]),
                       ],
 
                       if (_salida != null) ...[
@@ -483,19 +385,6 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
                         ),
                         const SizedBox(height: 8),
                       ],
-
-                      //Info Orden de trabajo
-                      buildSectionCard(
-                        'Orden de Trabajo: ${widget.ordenServicio.folioOS ?? 'N/A'}',
-                        [
-                          const SizedBox(height: 8),
-                          buildInfoItem(
-                            'Problema',
-                            '${_tipoProblema!.nombreTP ?? 'N/A'} - (${widget.ordenServicio.idTipoProblema ?? 0})',
-                          ),
-                        ],
-                      ),
-
                       const SizedBox(height: 16),
 
                       // Fotos

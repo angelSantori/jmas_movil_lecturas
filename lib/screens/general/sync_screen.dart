@@ -49,9 +49,13 @@ class _SyncScreenState extends State<SyncScreen> {
 
       for (final trabajo in trabajos) {
         try {
-          final success = await _trabajoRealizadoCntr.addTrabajoRealizado(
-            trabajo,
-          );
+          bool success;
+          if (trabajo.idTrabajoRealizado == null ||
+              trabajo.idTrabajoRealizado == 0) {
+            success = await _trabajoRealizadoCntr.addTrabajoRealizado(trabajo);
+          } else {
+            success = await _trabajoRealizadoCntr.editTrabajoRealizado(trabajo);
+          }
 
           if (success) {
             await _dbHelper.updateSincronizado(
@@ -63,9 +67,7 @@ class _SyncScreenState extends State<SyncScreen> {
             });
           }
         } catch (e) {
-          print(
-            'Error al sincronizar trabajo ${trabajo.idTrabajoRealizado}: $e',
-          );
+          print('Error al sincronizar trabajo: $e');
         }
       }
 

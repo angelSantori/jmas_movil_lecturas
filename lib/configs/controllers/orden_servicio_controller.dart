@@ -1,12 +1,7 @@
-// ignore_for_file: public_member_api_docs, sort_constructors_first
 // Librerías
 import 'dart:convert';
 import 'dart:io';
-
 import 'package:http/io_client.dart';
-
-import 'package:jmas_movil_lecturas/configs/controllers/padron_controller.dart';
-import 'package:jmas_movil_lecturas/configs/controllers/tipo_problema_controller.dart';
 import 'package:jmas_movil_lecturas/configs/service/auth_service.dart';
 import 'package:jmas_movil_lecturas/configs/service/database_helper.dart';
 
@@ -40,26 +35,6 @@ class OrdenServicioController {
         final dbHelper = DatabaseHelper();
         for (var orden in ordenes) {
           await dbHelper.insertOrUpdateOrdenServicio(orden);
-
-          // Si hay padron, guardarlo
-          if (orden.idPadron != null) {
-            final padron = await PadronController().getPadronXId(
-              orden.idPadron!,
-            );
-            if (padron != null) {
-              await dbHelper.insertOrUpdatePadron(padron);
-            }
-          }
-
-          // Si hay tipo problema, guardarlo
-          if (orden.idTipoProblema != null) {
-            final tipoProblema = await TipoProblemaController().tipoProblemaXId(
-              orden.idTipoProblema!,
-            );
-            if (tipoProblema != null) {
-              await dbHelper.insertOrUpdateTipoProblema(tipoProblema);
-            }
-          }
         }
 
         return ordenes;

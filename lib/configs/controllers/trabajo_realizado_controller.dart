@@ -83,6 +83,7 @@ class TrabajoRealizadoController {
   //Add
   Future<bool> addTrabajoRealizado(TrabajoRealizado trabajoRealizado) async {
     try {
+      // Primero intentar subir al servidor
       final IOClient client = _createHttpClient();
       final response = await client.post(
         Uri.parse('${_authService.apiURL}/TrabajoRealizadoes'),
@@ -91,17 +92,18 @@ class TrabajoRealizadoController {
       );
 
       if (response.statusCode == 201) {
-        return true;
-      } else {
-        // Si falla, guardar localmente
+        // Si se subió correctamente, marcarlo como sincronizado
+        trabajoRealizado = TrabajoRealizado.fromJson(response.body);
         await _dbHelper.insertTrabajo(trabajoRealizado);
-        return false;
+        return true;
       }
     } catch (e) {
-      // Si hay error de conexión, guardar localmente
-      await _dbHelper.insertTrabajo(trabajoRealizado);
-      return false;
+      print('Error al subir trabajo: $e');
     }
+
+    // Si falla, guardar localmente
+    await _dbHelper.insertTrabajo(trabajoRealizado);
+    return false;
   }
 
   //PUT
@@ -147,6 +149,10 @@ class TrabajoRealizado {
   int? encuenstaTR;
   int? idUserTR;
   int? idOrdenServicio;
+  String? folioOS;
+  String? padronNombre;
+  String? padronDireccion;
+  String? problemaNombre;
   int? idSalida;
   TrabajoRealizado({
     this.idTrabajoRealizado,
@@ -159,6 +165,10 @@ class TrabajoRealizado {
     this.encuenstaTR,
     this.idUserTR,
     this.idOrdenServicio,
+    this.folioOS,
+    this.padronNombre,
+    this.padronDireccion,
+    this.problemaNombre,
     this.idSalida,
   });
 
@@ -173,6 +183,10 @@ class TrabajoRealizado {
     int? encuenstaTR,
     int? idUserTR,
     int? idOrdenServicio,
+    String? folioOS,
+    String? padronNombre,
+    String? padronDireccion,
+    String? problemaNombre,
     int? idSalida,
   }) {
     return TrabajoRealizado(
@@ -186,6 +200,10 @@ class TrabajoRealizado {
       encuenstaTR: encuenstaTR ?? this.encuenstaTR,
       idUserTR: idUserTR ?? this.idUserTR,
       idOrdenServicio: idOrdenServicio ?? this.idOrdenServicio,
+      folioOS: folioOS ?? this.folioOS,
+      padronNombre: padronNombre ?? this.padronNombre,
+      padronDireccion: padronDireccion ?? this.padronDireccion,
+      problemaNombre: problemaNombre ?? this.problemaNombre,
       idSalida: idSalida ?? this.idSalida,
     );
   }
@@ -202,22 +220,48 @@ class TrabajoRealizado {
       'encuenstaTR': encuenstaTR,
       'idUserTR': idUserTR,
       'idOrdenServicio': idOrdenServicio,
+      'folioOS': folioOS,
+      'padronNombre': padronNombre,
+      'padronDireccion': padronDireccion,
+      'problemaNombre': problemaNombre,
       'idSalida': idSalida,
     };
   }
 
   factory TrabajoRealizado.fromMap(Map<String, dynamic> map) {
     return TrabajoRealizado(
-      idTrabajoRealizado: map['idTrabajoRealizado'] != null ? map['idTrabajoRealizado'] as int : null,
+      idTrabajoRealizado:
+          map['idTrabajoRealizado'] != null
+              ? map['idTrabajoRealizado'] as int
+              : null,
       folioTR: map['folioTR'] != null ? map['folioTR'] as String : null,
       fechaTR: map['fechaTR'] != null ? map['fechaTR'] as String : null,
-      ubicacionTR: map['ubicacionTR'] != null ? map['ubicacionTR'] as String : null,
-      comentarioTR: map['comentarioTR'] != null ? map['comentarioTR'] as String : null,
-      fotoAntes64TR: map['fotoAntes64TR'] != null ? map['fotoAntes64TR'] as String : null,
-      fotoDespues64TR: map['fotoDespues64TR'] != null ? map['fotoDespues64TR'] as String : null,
-      encuenstaTR: map['encuenstaTR'] != null ? map['encuenstaTR'] as int : null,
+      ubicacionTR:
+          map['ubicacionTR'] != null ? map['ubicacionTR'] as String : null,
+      comentarioTR:
+          map['comentarioTR'] != null ? map['comentarioTR'] as String : null,
+      fotoAntes64TR:
+          map['fotoAntes64TR'] != null ? map['fotoAntes64TR'] as String : null,
+      fotoDespues64TR:
+          map['fotoDespues64TR'] != null
+              ? map['fotoDespues64TR'] as String
+              : null,
+      encuenstaTR:
+          map['encuenstaTR'] != null ? map['encuenstaTR'] as int : null,
       idUserTR: map['idUserTR'] != null ? map['idUserTR'] as int : null,
-      idOrdenServicio: map['idOrdenServicio'] != null ? map['idOrdenServicio'] as int : null,
+      idOrdenServicio:
+          map['idOrdenServicio'] != null ? map['idOrdenServicio'] as int : null,
+      folioOS: map['folioOS'] != null ? map['folioOS'] as String : null,
+      padronNombre:
+          map['padronNombre'] != null ? map['padronNombre'] as String : null,
+      padronDireccion:
+          map['padronDireccion'] != null
+              ? map['padronDireccion'] as String
+              : null,
+      problemaNombre:
+          map['problemaNombre'] != null
+              ? map['problemaNombre'] as String
+              : null,
       idSalida: map['idSalida'] != null ? map['idSalida'] as int : null,
     );
   }
@@ -229,39 +273,46 @@ class TrabajoRealizado {
 
   @override
   String toString() {
-    return 'TrabajoRealizado(idTrabajoRealizado: $idTrabajoRealizado, folioTR: $folioTR, fechaTR: $fechaTR, ubicacionTR: $ubicacionTR, comentarioTR: $comentarioTR, fotoAntes64TR: $fotoAntes64TR, fotoDespues64TR: $fotoDespues64TR, encuenstaTR: $encuenstaTR, idUserTR: $idUserTR, idOrdenServicio: $idOrdenServicio, idSalida: $idSalida)';
+    return 'TrabajoRealizado(idTrabajoRealizado: $idTrabajoRealizado, folioTR: $folioTR, fechaTR: $fechaTR, ubicacionTR: $ubicacionTR, comentarioTR: $comentarioTR, fotoAntes64TR: $fotoAntes64TR, fotoDespues64TR: $fotoDespues64TR, encuenstaTR: $encuenstaTR, idUserTR: $idUserTR, idOrdenServicio: $idOrdenServicio, folioOS: $folioOS, padronNombre: $padronNombre, padronDireccion: $padronDireccion, problemaNombre: $problemaNombre, idSalida: $idSalida)';
   }
 
   @override
   bool operator ==(covariant TrabajoRealizado other) {
     if (identical(this, other)) return true;
-  
-    return 
-      other.idTrabajoRealizado == idTrabajoRealizado &&
-      other.folioTR == folioTR &&
-      other.fechaTR == fechaTR &&
-      other.ubicacionTR == ubicacionTR &&
-      other.comentarioTR == comentarioTR &&
-      other.fotoAntes64TR == fotoAntes64TR &&
-      other.fotoDespues64TR == fotoDespues64TR &&
-      other.encuenstaTR == encuenstaTR &&
-      other.idUserTR == idUserTR &&
-      other.idOrdenServicio == idOrdenServicio &&
-      other.idSalida == idSalida;
+
+    return other.idTrabajoRealizado == idTrabajoRealizado &&
+        other.folioTR == folioTR &&
+        other.fechaTR == fechaTR &&
+        other.ubicacionTR == ubicacionTR &&
+        other.comentarioTR == comentarioTR &&
+        other.fotoAntes64TR == fotoAntes64TR &&
+        other.fotoDespues64TR == fotoDespues64TR &&
+        other.encuenstaTR == encuenstaTR &&
+        other.idUserTR == idUserTR &&
+        other.idOrdenServicio == idOrdenServicio &&
+        other.folioOS == folioOS &&
+        other.padronNombre == padronNombre &&
+        other.padronDireccion == padronDireccion &&
+        other.problemaNombre == problemaNombre &&
+        other.idSalida == idSalida;
   }
 
   @override
   int get hashCode {
     return idTrabajoRealizado.hashCode ^
-      folioTR.hashCode ^
-      fechaTR.hashCode ^
-      ubicacionTR.hashCode ^
-      comentarioTR.hashCode ^
-      fotoAntes64TR.hashCode ^
-      fotoDespues64TR.hashCode ^
-      encuenstaTR.hashCode ^
-      idUserTR.hashCode ^
-      idOrdenServicio.hashCode ^
-      idSalida.hashCode;
+        folioTR.hashCode ^
+        fechaTR.hashCode ^
+        ubicacionTR.hashCode ^
+        comentarioTR.hashCode ^
+        fotoAntes64TR.hashCode ^
+        fotoDespues64TR.hashCode ^
+        encuenstaTR.hashCode ^
+        idUserTR.hashCode ^
+        idOrdenServicio.hashCode ^
+        folioOS.hashCode ^
+        padronNombre.hashCode ^
+        padronDireccion.hashCode ^
+        problemaNombre.hashCode ^
+        idSalida.hashCode;
   }
 }
