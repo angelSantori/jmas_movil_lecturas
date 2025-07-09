@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/users_controller.dart';
 import 'package:jmas_movil_lecturas/screens/general/home_screen.dart';
 import 'package:jmas_movil_lecturas/widgets/formularios.dart';
+import 'package:jmas_movil_lecturas/widgets/mensajes.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -38,19 +39,24 @@ class _LoginScreenState extends State<LoginScreen> {
         context,
       );
 
-      if (success && mounted) {
-        // Pequeño delay para permitir que las animaciones terminen
-        await Future.delayed(const Duration(milliseconds: 300));
-        if (!mounted) return;
+      if (!mounted) return;
 
-        Navigator.pushAndRemoveUntil(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-          (Route<dynamic> route) => false,
-        );
+      if (!success) {
+        showAdvertence(context, 'Usuario o contraseña incorrectos');
+        return;
       }
+
+      await Future.delayed(const Duration(milliseconds: 300));
+      if (!mounted) return;
+
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        (Route<dynamic> route) => false,
+      );
     } catch (e) {
       debugPrint('Error en login: $e');
+      showError(context, 'Error _submitForm: $e');
       if (mounted) {
         ScaffoldMessenger.of(
           context,
