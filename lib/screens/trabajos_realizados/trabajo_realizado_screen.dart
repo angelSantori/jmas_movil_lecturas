@@ -30,7 +30,7 @@ class TrabajoRealizadoScreen extends StatefulWidget {
 }
 
 class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
-  final TextEditingController _comentarioController = TextEditingController();
+  TextEditingController _comentarioController = TextEditingController();
 
   String? _ubicacion;
   String? _fotoAntesPath;
@@ -47,6 +47,7 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
   @override
   void initState() {
     super.initState();
+    _comentarioController = TextEditingController();
     _getCurrentLocation();
     _loadInitialData();
     _comentarioController.addListener(_saveDraftData);
@@ -57,21 +58,26 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
     try {
       final directory = await getApplicationDocumentsDirectory();
       final file = File(
-        '${directory.path}/trabajo_draft_${widget.ordenServicio.idOrdenServicio}.json',
+        '${directory.path}/trabajo_draft_${widget.trabajoRealizado?.idTrabajoRealizado ?? widget.ordenServicio.idOrdenServicio}.json',
       );
 
       if (await file.exists()) {
         final draftData = json.decode(await file.readAsString());
 
-        setState(() {
-          _comentarioController.text = draftData['comentario'] ?? '';
-          _ubicacion = draftData['ubicacion'] ?? _ubicacion;
-          _fotoAntesPath = draftData['fotoAntesPath'];
-          _fotoDespuesPath = draftData['fotoDespuesPath'];
-          _rating = draftData['rating'] ?? 0;
-        });
-
-        print('Borrador cargado: $draftData');
+        // Solo cargar si el borrador corresponde a esta tarea
+        if (draftData['idOrdenServicio'] ==
+                widget.ordenServicio.idOrdenServicio &&
+            (draftData['idTrabajoRealizado'] ==
+                    widget.trabajoRealizado?.idTrabajoRealizado ||
+                widget.trabajoRealizado?.idTrabajoRealizado == null)) {
+          setState(() {
+            _comentarioController.text = draftData['comentario'] ?? '';
+            _ubicacion = draftData['ubicacion'] ?? _ubicacion;
+            _fotoAntesPath = draftData['fotoAntesPath'];
+            _fotoDespuesPath = draftData['fotoDespuesPath'];
+            _rating = draftData['rating'] ?? 0;
+          });
+        }
       }
     } catch (e) {
       print('Error cargando borrador: $e');
@@ -81,30 +87,22 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
   Future<void> _loadInitialData() async {
     setState(() => _isLoading = true);
 
+    _comentarioController.clear();
+
     // Cargar datos existentes si hay un trabajo realizado
     if (widget.trabajoRealizado != null) {
-      _comentarioController.text = widget.trabajoRealizado!.comentarioTR ?? '';
-      _ubicacion = widget.trabajoRealizado!.ubicacionTR;
-      _rating = widget.trabajoRealizado!.encuenstaTR ?? 0;
-
-      // Asegurarse de cargar las fotos correctamente
-      _fotoAntesPath = widget.trabajoRealizado!.fotoAntes64TR;
-      _fotoDespuesPath = widget.trabajoRealizado!.fotoDespues64TR;
-
-      // Debug
-      print('Fotos cargadas en initState:');
-      print(
-        'Antes: ${_fotoAntesPath != null ? "disponible" : "no disponible"}',
-      );
-      print(
-        'Después: ${_fotoDespuesPath != null ? "disponible" : "no disponible"}',
-      );
+      setState(() {
+        _comentarioController.text =
+            widget.trabajoRealizado!.comentarioTR ?? '';
+        _ubicacion = widget.trabajoRealizado!.ubicacionTR;
+        _rating = widget.trabajoRealizado!.encuenstaTR ?? 0;
+        _fotoAntesPath = widget.trabajoRealizado!.fotoAntes64TR;
+        _fotoDespuesPath = widget.trabajoRealizado!.fotoDespues64TR;
+      });
     }
 
     // Obtener ubicación si no hay datos existentes
-    if (widget.trabajoRealizado == null ||
-        widget.trabajoRealizado!.ubicacionTR == null ||
-        widget.trabajoRealizado!.ubicacionTR!.isEmpty) {
+    if (_ubicacion == null || _ubicacion!.isEmpty) {
       await _getCurrentLocation();
     }
 
@@ -207,7 +205,7 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
       }
 
       // Crear objeto TrabajoRealizado
-      final trabajo = TrabajoRealizado(
+      var trabajo = TrabajoRealizado(
         idTrabajoRealizado: widget.trabajoRealizado?.idTrabajoRealizado ?? 0,
         folioTR: widget.trabajoRealizado?.folioTR,
         fechaTR: DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now()),
@@ -229,14 +227,25 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
 
       // Guardar en base de datos local
       final dbHelper = DatabaseHelper();
-      await dbHelper.insertTrabajo(trabajo);
+      final id = await dbHelper.insertTrabajo(trabajo);
 
-      // Eliminar borrador
+      // Actualizar el trabajo con el ID generado
+      trabajo = trabajo.copyWith(idTrabajoRealizado: id);
+
+      // Eliminar borrador usando el ID correcto
       final directory = await getApplicationDocumentsDirectory();
       final file = File(
-        '${directory.path}/trabajo_draft_${widget.ordenServicio.idOrdenServicio}.json',
+        '${directory.path}/trabajo_draft_${widget.trabajoRealizado?.idTrabajoRealizado ?? id}.json',
       );
       if (await file.exists()) await file.delete();
+
+      // Actualizar el estado local
+      setState(() {
+        _fotoAntesPath = trabajo.fotoAntes64TR;
+        _fotoDespuesPath = trabajo.fotoDespues64TR;
+        _comentarioController.text = trabajo.comentarioTR ?? '';
+        _rating = trabajo.encuenstaTR ?? 0;
+      });
 
       if (!mounted) return;
       showOk(context, 'Progreso guardado correctamente');
@@ -254,24 +263,25 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
   }
 
   Future<void> _saveDraftData() async {
+    if (widget.isReadOnly) return;
+
     try {
       final directory = await getApplicationDocumentsDirectory();
       final file = File(
-        '${directory.path}/trabajo_draft_${widget.ordenServicio.idOrdenServicio}.json',
+        '${directory.path}/trabajo_draft_${widget.trabajoRealizado?.idTrabajoRealizado}.json',
       );
 
       final draftData = {
+        'idTrabajoRealizado': widget.trabajoRealizado?.idTrabajoRealizado,
         'idOrdenServicio': widget.ordenServicio.idOrdenServicio,
         'comentario': _comentarioController.text,
         'ubicacion': _ubicacion,
         'fotoAntesPath': _fotoAntesPath,
         'fotoDespuesPath': _fotoDespuesPath,
         'rating': _rating,
-        'timestamp': DateTime.now().toIso8601String(),
       };
 
       await file.writeAsString(json.encode(draftData));
-      print('Borrador guardado: ${file.path}');
     } catch (e) {
       print('Error saving draft data: $e');
     }
