@@ -6,13 +6,11 @@ import 'package:jmas_movil_lecturas/configs/controllers/users_controller.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
-  //final String apiURL = 'https://localhost:5001/api';
   //final String apiURL = 'http://200.200.200.155:5000/api';
-  //final String apiURL = 'https://jmasapi.up.railway.app/api';
-  //final String apiURL = 'http://192.168.0.15:8080/api';
-  final String apiURL = 'https://192.168.0.6:5001/api';
-  //final String apiURL = 'http://192.168.0.6:5001/api';
+  final String apiURL = 'https://192.168.0.2:5001/api';
+  //final String apiURL = 'http://192.168.0.2:5000/api'; //  Casa
   //final String apiURL = 'https://200.200.200.176:5001/api';
+  //final String apiURL = 'http://192.168.137.1:5000/api'; //  Wifi servidor
 
   Users? _currentUser;
 
