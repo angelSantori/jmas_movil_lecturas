@@ -1,5 +1,6 @@
 import 'package:jmas_movil_lecturas/configs/controllers/orden_servicio_controller.dart';
 import 'package:jmas_movil_lecturas/configs/controllers/trabajo_realizado_controller.dart';
+import 'package:path_provider/path_provider.dart';
 import 'package:sqflite/sqflite.dart';
 import 'package:path/path.dart';
 
@@ -177,6 +178,8 @@ class DatabaseHelper {
         'fechaTR',
         'ubicacionTR',
         'comentarioTR',
+        'fotoAntes64TR',
+        'fotoDespues64TR',
         'encuenstaTR',
         'idUserTR',
         'idOrdenServicio',
@@ -216,8 +219,21 @@ class DatabaseHelper {
     );
   }
 
+  // Future<int> clearTrabajos() async {
+  //   final db = await database;
+  //   return await db.delete('trabajos_realizados');
+  // }
+
   Future<int> clearTrabajos() async {
     final db = await database;
+    // Eliminar también los archivos de borradores
+    final directory = await getApplicationDocumentsDirectory();
+    final files = directory.listSync();
+    for (var file in files) {
+      if (file.path.contains('trabajo_draft_')) {
+        await file.delete();
+      }
+    }
     return await db.delete('trabajos_realizados');
   }
 
