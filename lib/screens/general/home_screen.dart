@@ -156,8 +156,9 @@ class _HomeScreenState extends State<HomeScreen> {
                 child: const Text('Cancelar'),
               ),
               TextButton(
-                onPressed: () {
-                  _dbHelper.clearTrabajos();
+                onPressed: () async {
+                  await _dbHelper.clearTrabajos();
+                  await _dbHelper.clearOrdenesServicio();
                   Navigator.pop(context, true);
                 },
                 child: const Text('Salir'),
@@ -381,16 +382,8 @@ class _HomeScreenState extends State<HomeScreen> {
                                 builder:
                                     (context) => TrabajoRealizadoScreen(
                                       ordenServicio: ordenTrabajo,
-                                      trabajoRealizado:
-                                          trabajoEspecifico
-                                                      .idTrabajoRealizado !=
-                                                  null
-                                              ? trabajoEspecifico
-                                              : null,
-                                      isReadOnly:
-                                          trabajoEspecifico.ubicacionTR != null
-                                              ? true
-                                              : false,
+                                      trabajoRealizado: trabajoEspecifico,
+                                      isReadOnly: false,
                                     ),
                               ),
                             );
