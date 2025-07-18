@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/io_client.dart';
+import 'package:jmas_movil_lecturas/configs/controllers/orden_servicio_controller.dart';
 
 import 'package:jmas_movil_lecturas/configs/service/auth_service.dart';
 import 'package:jmas_movil_lecturas/configs/service/database_helper.dart';
@@ -120,6 +121,17 @@ class TrabajoRealizadoController {
       );
 
       if (response.statusCode == 204) {
+        // Si la edición fue exitosa, actualizar estado de la orden
+        if (trabajoRealizado.idOrdenServicio != null) {
+          final ordenServicioController = OrdenServicioController();
+          final orden = await ordenServicioController.getOrdenServicioXId(
+            trabajoRealizado.idOrdenServicio!,
+          );
+          if (orden != null) {
+            final ordenActualizada = orden.copyWith(estadoOS: 'Revisión');
+            await ordenServicioController.editOrdenServicio(ordenActualizada);
+          }
+        }
         return true;
       } else {
         // Si falla, guardar localmente como nuevo registro
