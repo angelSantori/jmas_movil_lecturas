@@ -96,23 +96,13 @@ class _LoginScreenState extends State<LoginScreen> {
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
                   // Logo/Título simplificado
-                  const Text(
-                    'TRABAJOS',
-                    style: TextStyle(
-                      shadows: [
-                        Shadow(
-                          blurRadius: 10,
-                          color: Colors.black,
-                          offset: Offset(2, 2),
-                        ),
-                      ],
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 1.5,
-                    ),
+                  Image.asset(
+                    'assets/png/logoVertical02.png',
+                    height: 280,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Text('Error al cargar la imagen');
+                    },
                   ),
-                  const SizedBox(height: 40),
 
                   // Formulario
                   Form(
