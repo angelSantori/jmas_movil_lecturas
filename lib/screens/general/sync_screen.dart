@@ -46,8 +46,22 @@ class _SyncScreenState extends State<SyncScreen> {
 
     try {
       final trabajos = await _dbHelper.getTrabajosNoSincronizados();
+      final trabajosCompletos =
+          trabajos
+              .where(
+                (t) =>
+                    t.fotoAntes64TR != null &&
+                    t.fotoAntes64TR!.isNotEmpty &&
+                    t.fotoDespues64TR != null &&
+                    t.fotoDespues64TR!.isNotEmpty &&
+                    t.comentarioTR != null &&
+                    t.comentarioTR!.isNotEmpty &&
+                    t.encuenstaTR != null &&
+                    t.encuenstaTR! > 0,
+              )
+              .toList();
 
-      for (final trabajo in trabajos) {
+      for (final trabajo in trabajosCompletos) {
         try {
           bool success;
           if (trabajo.idTrabajoRealizado == null ||
@@ -58,10 +72,23 @@ class _SyncScreenState extends State<SyncScreen> {
           }
 
           if (success) {
-            await _dbHelper.updateSincronizado(
-              trabajo.idTrabajoRealizado!,
-              true,
-            );
+            // Actualizar estado de la orden a "Revisión"
+            if (trabajo.idOrdenServicio != null) {
+              final orden = await _ordenServicioController.getOrdenServicioXId(
+                trabajo.idOrdenServicio!,
+              );
+              if (orden != null) {
+                final ordenActualizada = orden.copyWith(estadoOS: 'Revisión');
+                await _ordenServicioController.editOrdenServicio(
+                  ordenActualizada,
+                );
+                await _dbHelper.insertOrUpdateOrdenServicio(ordenActualizada);
+              }
+            }
+
+            // Eliminar el trabajo localmente
+            await _dbHelper.deleteTrabajo(trabajo.idTrabajoRealizado!);
+
             setState(() {
               _syncedItems++;
             });
@@ -72,10 +99,12 @@ class _SyncScreenState extends State<SyncScreen> {
       }
 
       if (mounted) {
-        showOk(
-          context,
-          'Sincronización completada: $_syncedItems de $_pendingSyncs items',
-        );
+        final mensaje =
+            trabajosCompletos.isEmpty
+                ? 'No hay trabajos completos para sincronizar'
+                : 'Sincronización completada: $_syncedItems de ${trabajosCompletos.length} items';
+
+        showOk(context, mensaje);
         await _loadPendingSyncs();
       }
     } catch (e) {
