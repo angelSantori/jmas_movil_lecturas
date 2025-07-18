@@ -21,6 +21,7 @@ dependencies:
   path_provider: ^2.1.5 #Provider
   connectivity_plus: ^6.1.4 #Conexión
   sqflite: ^2.4.2 #DB
+  flutter_svg: ^2.2.0 #SVG
 
 dev_dependencies:
   flutter_test:
@@ -32,9 +33,11 @@ flutter:
   
   uses-material-design: true
 
-  # To add assets to your application, add an assets section, like this:
-  # assets:
-  #   - images/a_dot_burr.jpeg
+  
+  assets:
+    - assets/svg/
+    - assets/jpg/
+    - assets/png/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see
