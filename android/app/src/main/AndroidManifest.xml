@@ -11,7 +11,7 @@
     <uses-permission android:name="android.permission.ACCESS_BACKGROUND_LOCATION" />
 
     <application
-        android:label="jmas_movil_lecturas"
+        android:label="JMAS Trabajos"
         android:name="${applicationName}"
         android:hardwareAccelerated="true"
         android:largeHeap="true"
