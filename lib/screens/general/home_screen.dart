@@ -54,7 +54,7 @@ class _HomeScreenState extends State<HomeScreen> {
   Future<void> _checkDataDownloaded() async {
     final trabajos = await _dbHelper.getTrabajosNoSincronizados();
     setState(() {
-      _hasDataDownloaded = trabajos.isNotEmpty;
+      _hasDataDownloaded = trabajos.isNotEmpty || trabajos.isNotEmpty;
     });
   }
 
@@ -67,32 +67,15 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final listTrabajos = await _trabajoRealizadoController.getLocalTrabajos();
-      // Debug: Mostrar información de los trabajos cargados
-      print('Trabajos cargados: ${listTrabajos.length}');
-      for (var trabajo in listTrabajos) {
-        print('TR ${trabajo.folioTR}:');
-        print(
-          ' - Foto antes: ${trabajo.fotoAntes64TR?.substring(0, 20)}... (longitud: ${trabajo.fotoAntes64TR?.length})',
-        );
-        print(
-          ' - Foto después: ${trabajo.fotoDespues64TR?.substring(0, 20)}... (longitud: ${trabajo.fotoDespues64TR?.length})',
-        );
-      }
+      final tempCache = <int, OrdenServicio>{};
+
       if (mounted) {
         setState(() {
           trabajos =
-              listTrabajos
-                  .where(
-                    (t) =>
-                        (t.fechaTR == null || t.fechaTR!.isEmpty) &&
-                        (t.ubicacionTR == null || t.ubicacionTR!.isEmpty) &&
-                        t.idOrdenServicio != null,
-                  )
-                  .toList();
+              listTrabajos.where((t) => t.idOrdenServicio != null).toList();
           isLoading = false;
         });
       }
-      final tempCache = <int, OrdenServicio>{};
 
       // Primero cargar todas las órdenes necesarias
       for (var trabajo in listTrabajos) {
@@ -228,12 +211,17 @@ class _HomeScreenState extends State<HomeScreen> {
             ListTile(
               leading: const Icon(Icons.sync),
               title: const Text('Sincronización'),
-              onTap: () {
+              onTap: () async {
                 Navigator.pop(context);
-                Navigator.push(
+
+                final result = await Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const SyncScreen()),
                 );
+                if (result == true) {
+                  await _checkDataDownloaded();
+                  await _loadLocalTrabajos();
+                }
               },
             ),
             const Divider(),
@@ -277,136 +265,166 @@ class _HomeScreenState extends State<HomeScreen> {
                   ],
                 ),
               )
-              : isLoading
-              ? const Center(child: CircularProgressIndicator())
-              : trabajos.isEmpty
-              ? const Center(child: Text('No tienes trabajos asignadas'))
-              : ListView.builder(
-                itemCount: trabajos.length,
-                itemBuilder: (context, index) {
-                  final trabajo = trabajos[index];
-                  final ordenTrabajo =
-                      trabajo.idOrdenServicio != null
-                          ? otCache[trabajo.idOrdenServicio]
-                          : null;
+              : RefreshIndicator(
+                onRefresh: _loadLocalTrabajos,
+                child:
+                    isLoading
+                        ? const Center(child: CircularProgressIndicator())
+                        : trabajos.isEmpty
+                        ? const Center(
+                          child: Text('No tienes trabajos asignadas'),
+                        )
+                        : ListView.builder(
+                          itemCount: trabajos.length,
+                          itemBuilder: (context, index) {
+                            final trabajo = trabajos[index];
+                            final ordenTrabajo =
+                                trabajo.idOrdenServicio != null
+                                    ? otCache[trabajo.idOrdenServicio]
+                                    : null;
 
-                  return Container(
-                    margin: const EdgeInsets.all(8),
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(4),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.grey.withOpacity(0.5),
-                          spreadRadius: 2,
-                          blurRadius: 5,
-                          offset: Offset(2, 4), // dirección de la sombra
-                        ),
-                      ],
-                    ),
-                    child: ClipRRect(
-                      borderRadius: BorderRadiusGeometry.circular(4),
-                      child: Container(
-                        decoration: BoxDecoration(
-                          gradient: LinearGradient(
-                            colors: [
-                              getEstadoColor(ordenTrabajo?.estadoOS),
-                              Colors.white,
-                              Colors.white,
-                              getPrioridadColor(ordenTrabajo?.prioridadOS),
-                            ],
-                            begin: Alignment.centerRight,
-                            end: Alignment.centerLeft,
-                            stops: [0.01, 0.4, 0.6, 0.95],
-                          ),
-                          borderRadius: BorderRadius.circular(12),
-                        ),
-                        child: ListTile(
-                          title: Text(
-                            'Trabajo: ${trabajo.folioTR ?? 'Sin folio'}',
-                            style: TextStyle(fontWeight: FontWeight.bold),
-                          ),
-                          subtitle: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'Orden de trabajo: ${ordenTrabajo?.folioOS ?? 'Cargado...'}',
-                                style: TextStyle(color: Colors.grey.shade900),
+                            return Container(
+                              margin: const EdgeInsets.all(8),
+                              decoration: BoxDecoration(
+                                borderRadius: BorderRadius.circular(4),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: Colors.grey.withOpacity(0.5),
+                                    spreadRadius: 2,
+                                    blurRadius: 5,
+                                    offset: Offset(
+                                      2,
+                                      4,
+                                    ), // dirección de la sombra
+                                  ),
+                                ],
                               ),
-                              const SizedBox(height: 4),
-
-                              //Chip
-                              if (ordenTrabajo != null &&
-                                  ordenTrabajo.estadoOS != null &&
-                                  ordenTrabajo.prioridadOS != null)
-                                Row(
-                                  children: [
-                                    Chip(
-                                      label: Text(
-                                        ordenTrabajo.prioridadOS!,
-                                        style: TextStyle(color: Colors.white),
-                                      ),
-                                      backgroundColor: getPrioridadColor(
-                                        ordenTrabajo.prioridadOS,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Chip(
-                                      label: Text(
-                                        ordenTrabajo.estadoOS!,
-                                        style: const TextStyle(
-                                          color: Colors.white,
+                              child: ClipRRect(
+                                borderRadius: BorderRadiusGeometry.circular(4),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    gradient: LinearGradient(
+                                      colors: [
+                                        getEstadoColor(ordenTrabajo?.estadoOS),
+                                        Colors.white,
+                                        Colors.white,
+                                        getPrioridadColor(
+                                          ordenTrabajo?.prioridadOS,
                                         ),
-                                      ),
-                                      backgroundColor: getEstadoColor(
-                                        ordenTrabajo.estadoOS,
-                                      ),
-                                      shape: RoundedRectangleBorder(
-                                        borderRadius: BorderRadius.circular(10),
+                                      ],
+                                      begin: Alignment.centerRight,
+                                      end: Alignment.centerLeft,
+                                      stops: [0.01, 0.4, 0.6, 0.95],
+                                    ),
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: ListTile(
+                                    title: Text(
+                                      'Trabajo: ${trabajo.folioTR ?? 'Sin folio'}',
+                                      style: TextStyle(
+                                        fontWeight: FontWeight.bold,
                                       ),
                                     ),
-                                  ],
-                                ),
-                            ],
-                          ),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () async {
-                            if (ordenTrabajo == null) return;
-                            final trabajoEspecifico = trabajo;
+                                    subtitle: Column(
+                                      crossAxisAlignment:
+                                          CrossAxisAlignment.start,
+                                      children: [
+                                        Text(
+                                          'Orden de trabajo: ${ordenTrabajo?.folioOS ?? 'Cargado...'}',
+                                          style: TextStyle(
+                                            color: Colors.grey.shade900,
+                                          ),
+                                        ),
+                                        const SizedBox(height: 4),
 
-                            final result = await Navigator.push(
-                              context,
-                              MaterialPageRoute(
-                                builder:
-                                    (context) => TrabajoRealizadoScreen(
-                                      ordenServicio: ordenTrabajo,
-                                      trabajoRealizado: trabajoEspecifico,
-                                      isReadOnly: false,
+                                        //Chip
+                                        if (ordenTrabajo != null &&
+                                            ordenTrabajo.estadoOS != null &&
+                                            ordenTrabajo.prioridadOS != null)
+                                          Row(
+                                            children: [
+                                              Chip(
+                                                label: Text(
+                                                  ordenTrabajo.prioridadOS!,
+                                                  style: TextStyle(
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                                backgroundColor:
+                                                    getPrioridadColor(
+                                                      ordenTrabajo.prioridadOS,
+                                                    ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                              ),
+                                              const SizedBox(width: 8),
+                                              Chip(
+                                                label: Text(
+                                                  ordenTrabajo.estadoOS!,
+                                                  style: const TextStyle(
+                                                    color: Colors.white,
+                                                  ),
+                                                ),
+                                                backgroundColor: getEstadoColor(
+                                                  ordenTrabajo.estadoOS,
+                                                ),
+                                                shape: RoundedRectangleBorder(
+                                                  borderRadius:
+                                                      BorderRadius.circular(10),
+                                                ),
+                                              ),
+                                            ],
+                                          ),
+                                      ],
                                     ),
+                                    trailing: const Icon(Icons.chevron_right),
+                                    onTap: () async {
+                                      if (ordenTrabajo == null) return;
+                                      final trabajoEspecifico = trabajo;
+
+                                      final result = await Navigator.push(
+                                        context,
+                                        MaterialPageRoute(
+                                          builder:
+                                              (context) =>
+                                                  TrabajoRealizadoScreen(
+                                                    ordenServicio: ordenTrabajo,
+                                                    trabajoRealizado:
+                                                        trabajoEspecifico,
+                                                    isReadOnly:
+                                                        ordenTrabajo.estadoOS ==
+                                                                'Revisión'
+                                                            ? true
+                                                            : false,
+                                                  ),
+                                        ),
+                                      );
+                                      if (result == true) {
+                                        await _loadLocalTrabajos();
+                                        if (ordenTrabajo.idOrdenServicio !=
+                                            null) {
+                                          final updateOrden =
+                                              await _ordenServicioController
+                                                  .getOrdenServicioXId(
+                                                    ordenTrabajo
+                                                        .idOrdenServicio!,
+                                                  );
+                                          setState(() {
+                                            otCache[ordenTrabajo
+                                                    .idOrdenServicio!] =
+                                                updateOrden;
+                                          });
+                                        }
+                                      }
+                                    },
+                                  ),
+                                ),
                               ),
                             );
-                            if (result == true) {
-                              await _loadLocalTrabajos();
-                              if (ordenTrabajo.idOrdenServicio != null) {
-                                final updateOrden =
-                                    await _ordenServicioController
-                                        .getOrdenServicioXId(
-                                          ordenTrabajo.idOrdenServicio!,
-                                        );
-                                setState(() {
-                                  otCache[ordenTrabajo.idOrdenServicio!] =
-                                      updateOrden;
-                                });
-                              }
-                            }
                           },
                         ),
-                      ),
-                    ),
-                  );
-                },
               ),
     );
   }
