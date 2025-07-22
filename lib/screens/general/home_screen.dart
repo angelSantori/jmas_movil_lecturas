@@ -53,8 +53,17 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Future<void> _checkDataDownloaded() async {
     final trabajos = await _dbHelper.getTrabajosNoSincronizados();
+    final trabajosPendientes =
+        trabajos
+            .where(
+              (t) =>
+                  (t.fechaTR == null || t.fechaTR!.isEmpty) &&
+                  (t.ubicacionTR == null || t.ubicacionTR!.isEmpty),
+            )
+            .toList();
+
     setState(() {
-      _hasDataDownloaded = trabajos.isNotEmpty || trabajos.isNotEmpty;
+      _hasDataDownloaded = trabajosPendientes.isNotEmpty;
     });
   }
 
@@ -69,14 +78,6 @@ class _HomeScreenState extends State<HomeScreen> {
       final listTrabajos = await _trabajoRealizadoController.getLocalTrabajos();
       final tempCache = <int, OrdenServicio>{};
 
-      if (mounted) {
-        setState(() {
-          trabajos =
-              listTrabajos.where((t) => t.idOrdenServicio != null).toList();
-          isLoading = false;
-        });
-      }
-
       // Primero cargar todas las órdenes necesarias
       for (var trabajo in listTrabajos) {
         if (trabajo.idOrdenServicio != null &&
@@ -88,7 +89,6 @@ class _HomeScreenState extends State<HomeScreen> {
             if (orden != null) {
               tempCache[trabajo.idOrdenServicio!] = orden;
             } else {
-              // Si no está en local, obtener del servidor
               final ordenServidor = await _ordenServicioController
                   .getOrdenServicioXId(trabajo.idOrdenServicio!);
               if (ordenServidor != null) {
@@ -102,18 +102,21 @@ class _HomeScreenState extends State<HomeScreen> {
         }
       }
 
+      // Filtra solo trabajos pendientes (sin fechaTR o sin ubicaciónTR)
+      final trabajosPendientes =
+          listTrabajos
+              .where(
+                (t) =>
+                    (t.fechaTR == null || t.fechaTR!.isEmpty) &&
+                    (t.ubicacionTR == null || t.ubicacionTR!.isEmpty) &&
+                    t.idOrdenServicio != null,
+              )
+              .toList();
+
       if (mounted) {
         setState(() {
+          trabajos = trabajosPendientes;
           otCache = tempCache;
-          trabajos =
-              listTrabajos
-                  .where(
-                    (t) =>
-                        (t.fechaTR == null || t.fechaTR!.isEmpty) &&
-                        (t.ubicacionTR == null || t.ubicacionTR!.isEmpty) &&
-                        t.idOrdenServicio != null,
-                  )
-                  .toList();
           isLoading = false;
         });
       }
@@ -213,7 +216,6 @@ class _HomeScreenState extends State<HomeScreen> {
               title: const Text('Sincronización'),
               onTap: () async {
                 Navigator.pop(context);
-
                 final result = await Navigator.push(
                   context,
                   MaterialPageRoute(builder: (context) => const SyncScreen()),

@@ -38,11 +38,13 @@ class _SyncScreenState extends State<SyncScreen> {
     });
   }
 
-  Future<void> _syncData() async {
+  Future<bool> _syncData() async {
     setState(() {
       _isSyncing = true;
       _syncedItems = 0;
     });
+
+    bool syncSuccess = false;
 
     try {
       final trabajos = await _dbHelper.getTrabajosNoSincronizados();
@@ -55,11 +57,17 @@ class _SyncScreenState extends State<SyncScreen> {
                     t.fotoDespues64TR != null &&
                     t.fotoDespues64TR!.isNotEmpty &&
                     t.comentarioTR != null &&
-                    t.comentarioTR!.isNotEmpty &&
-                    t.encuenstaTR != null &&
-                    t.encuenstaTR! > 0,
+                    t.comentarioTR!.isNotEmpty,
               )
               .toList();
+
+      if (trabajosCompletos.isEmpty) {
+        await showAdvertence(
+          context,
+          'No hay trabajos completos para sincronizar',
+        );
+        return false;
+      }
 
       for (final trabajo in trabajosCompletos) {
         try {
@@ -99,18 +107,18 @@ class _SyncScreenState extends State<SyncScreen> {
       }
 
       if (mounted) {
-        final mensaje =
-            trabajosCompletos.isEmpty
-                ? showAdvertence(
-                  context,
-                  'No hay trabajos completos para sincronizar',
-                )
-                : showOk(
-                  context,
-                  'Sincronización completada: $_syncedItems de ${trabajosCompletos.length} items',
-                );
-
-        //showOk(context, mensaje);
+        if (trabajosCompletos.isNotEmpty && _syncedItems > 0) {
+          syncSuccess = true;
+          await showOk(
+            context,
+            'Sincronización completada: $_syncedItems de ${trabajosCompletos.length} items',
+          );
+        } else {
+          await showAdvertence(
+            context,
+            'No hay trabajos completos para sincronizar',
+          );
+        }
         await _loadPendingSyncs();
       }
     } catch (e) {
@@ -124,6 +132,7 @@ class _SyncScreenState extends State<SyncScreen> {
         });
       }
     }
+    return syncSuccess;
   }
 
   Future<void> _downloadData() async {
@@ -242,7 +251,15 @@ class _SyncScreenState extends State<SyncScreen> {
             ElevatedButton.icon(
               icon: const Icon(Icons.cloud_upload),
               label: const Text('Subir tareas realizadas'),
-              onPressed: _isSyncing || _pendingSyncs == 0 ? null : _syncData,
+              onPressed:
+                  _isSyncing || _pendingSyncs == 0
+                      ? null
+                      : () async {
+                        final success = await _syncData();
+                        if (success && mounted) {
+                          Navigator.pop(context, true);
+                        }
+                      },
               style: ElevatedButton.styleFrom(
                 padding: const EdgeInsets.symmetric(vertical: 16),
               ),
