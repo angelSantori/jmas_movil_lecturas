@@ -454,28 +454,31 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
                           ],
                         ),
 
-                      // Botón de enviar
-                      Center(
-                        child: SizedBox(
-                          width: 150,
-                          child: ElevatedButton(
-                            onPressed: _submitForm,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.blue.shade900,
-                              padding: const EdgeInsets.symmetric(vertical: 16),
-                              elevation: 4,
-                              shadowColor: Colors.blue.shade900,
-                            ),
-                            child: const Text(
-                              'Guardar Localmente',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: 16,
+                      // Botón para guardar
+                      if (widget.isReadOnly == false)
+                        Center(
+                          child: SizedBox(
+                            width: 150,
+                            child: ElevatedButton(
+                              onPressed: _submitForm,
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: Colors.blue.shade900,
+                                padding: const EdgeInsets.symmetric(
+                                  vertical: 16,
+                                ),
+                                elevation: 4,
+                                shadowColor: Colors.blue.shade900,
+                              ),
+                              child: const Text(
+                                'Guardar Localmente',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 16,
+                                ),
                               ),
                             ),
                           ),
                         ),
-                      ),
                       const SizedBox(height: 50),
                     ],
                   ),
