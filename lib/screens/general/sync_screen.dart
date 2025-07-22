@@ -101,10 +101,16 @@ class _SyncScreenState extends State<SyncScreen> {
       if (mounted) {
         final mensaje =
             trabajosCompletos.isEmpty
-                ? 'No hay trabajos completos para sincronizar'
-                : 'Sincronización completada: $_syncedItems de ${trabajosCompletos.length} items';
+                ? showAdvertence(
+                  context,
+                  'No hay trabajos completos para sincronizar',
+                )
+                : showOk(
+                  context,
+                  'Sincronización completada: $_syncedItems de ${trabajosCompletos.length} items',
+                );
 
-        showOk(context, mensaje);
+        //showOk(context, mensaje);
         await _loadPendingSyncs();
       }
     } catch (e) {
