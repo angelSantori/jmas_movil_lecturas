@@ -33,6 +33,7 @@ class DatabaseHelper {
             comentarioTR TEXT,
             fotoAntes64TR TEXT,
             fotoDespues64TR TEXT,
+            fotoRequiereMaterial64TR TEXT,
             encuenstaTR INTEGER,
             idUserTR INTEGER,
             idOrdenServicio INTEGER,
@@ -63,7 +64,7 @@ class DatabaseHelper {
         )
       ''');
       },
-      version: 14,
+      version: 15,
     );
   }
 
@@ -180,6 +181,7 @@ class DatabaseHelper {
         'comentarioTR',
         'fotoAntes64TR',
         'fotoDespues64TR',
+        'fotoRequiereMaterial64TR',
         'encuenstaTR',
         'idUserTR',
         'idOrdenServicio',
