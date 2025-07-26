@@ -35,12 +35,14 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
   String? _ubicacion;
   String? _fotoAntesPath;
   String? _fotoDespuesPath;
+  String? _fotoMaterialPath;
   String? _nombreCalle;
   String? _nombreColonia;
   bool _isLoading = false;
   Salidas? _salida;
   final _formKey = GlobalKey<FormState>();
-  bool _hasExistingData = false;
+  final bool _hasExistingData = false;
+  bool _requiereMaterial = false;
 
   int _rating = 0;
 
@@ -142,6 +144,34 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
     }
   }
 
+  Future<void> _takeMaterialPhoto() async {
+    final picker = ImagePicker();
+    try {
+      final pickedFile = await picker.pickImage(
+        source: ImageSource.camera,
+        imageQuality: 70,
+        maxWidth: 1024,
+      );
+
+      if (pickedFile != null) {
+        setState(() => _isLoading = true);
+        final bytes = await pickedFile.readAsBytes();
+        final base64Image = base64Encode(bytes);
+
+        setState(() {
+          _fotoMaterialPath = base64Image;
+          _requiereMaterial = true;
+          _isLoading = false;
+        });
+        await _saveDraftData();
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      showError(context, 'Error al tomar foto');
+      print('Error al tomar foto : $e');
+    }
+  }
+
   Future<void> _takePhoto(bool isBefore) async {
     if (_hasExistingData || widget.isReadOnly) return;
 
@@ -193,7 +223,7 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
 
     try {
       // Validar solo comentario como requerido
-      if (_comentarioController.text.isEmpty) {
+      if (_comentarioController.text.isEmpty && _requiereMaterial == false) {
         showAdvertence(context, 'Debes agregar un comentario');
         return;
       }
@@ -211,14 +241,14 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
         fechaTR: DateFormat('dd/MM/yyyy HH:mm').format(DateTime.now()),
         ubicacionTR: _ubicacion!,
         comentarioTR: _comentarioController.text,
-        fotoAntes64TR: _fotoAntesPath, // Puede ser null
-        fotoDespues64TR: _fotoDespuesPath, // Puede ser null
+        fotoAntes64TR: _fotoAntesPath,
+        fotoDespues64TR: _fotoDespuesPath,
+        fotoRequiereMaterial64TR: _requiereMaterial ? _fotoMaterialPath : null,
         encuenstaTR: _rating,
         idUserTR:
             widget.trabajoRealizado?.idUserTR ?? _salida?.id_User_Asignado,
         idOrdenServicio: widget.ordenServicio.idOrdenServicio,
         idSalida: _salida?.id_Salida,
-        // Mantener campos adicionales
         folioOS: widget.trabajoRealizado?.folioOS,
         padronNombre: widget.trabajoRealizado?.padronNombre,
         padronDireccion: widget.trabajoRealizado?.padronDireccion,
@@ -243,6 +273,7 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
       setState(() {
         _fotoAntesPath = trabajo.fotoAntes64TR;
         _fotoDespuesPath = trabajo.fotoDespues64TR;
+        _fotoMaterialPath = trabajo.fotoRequiereMaterial64TR;
         _comentarioController.text = trabajo.comentarioTR ?? '';
         _rating = trabajo.encuenstaTR ?? 0;
       });
@@ -371,88 +402,155 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                      ],
+                      const SizedBox(height: 10),
+
+                      if (isEditable) ...[
+                        buildSectionCard('¿Requiere Material?', [
+                          ToggleButtons(
+                            isSelected: [!_requiereMaterial, _requiereMaterial],
+                            onPressed: (index) {
+                              setState(() {
+                                _requiereMaterial = index == 1;
+                                if (!_requiereMaterial) {
+                                  _fotoMaterialPath = null;
+                                }
+                              });
+                            },
+                            constraints: BoxConstraints(
+                              minWidth: MediaQuery.of(context).size.width * 0.2,
+                              minHeight: 36,
+                            ),
+                            borderRadius: BorderRadius.circular(20),
+                            selectedColor: Colors.white,
+                            color:
+                                Colors.grey, // Color del texto no seleccionado
+                            fillColor:
+                                _requiereMaterial
+                                    ? Colors.green
+                                    : Colors.grey.shade400,
+                            renderBorder: true,
+                            borderColor: Colors.grey,
+                            children: [
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: Text(
+                                  'No',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                              Padding(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 16,
+                                ),
+                                child: Text(
+                                  'Sí',
+                                  style: TextStyle(fontWeight: FontWeight.bold),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ]),
                       ],
                       const SizedBox(height: 16),
 
-                      // Fotos
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Flexible(
-                            child: buildPhotoSection(
-                              'Foto Antes',
-                              _fotoAntesPath,
-                              isEditable ? () => _takePhoto(true) : null,
-                              isEditable: isEditable,
-                              //() => _takePhoto(true),
-                            ),
-                          ),
-
-                          if (_fotoAntesPath != null)
-                            // Foto después
+                      if (_requiereMaterial) ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
                             Flexible(
                               child: buildPhotoSection(
-                                'Foto Después',
-                                _fotoDespuesPath,
-                                isEditable && _fotoAntesPath != null
-                                    ? () => _takePhoto(false)
-                                    : null,
+                                'Foto de Evidencia',
+                                _fotoMaterialPath,
+                                () => _takeMaterialPhoto(),
                                 isEditable: isEditable,
                               ),
                             ),
-                        ],
-                      ),
-                      const SizedBox(height: 16),
-
-                      const Divider(),
-                      const SizedBox(height: 10),
-
-                      // Comentario
-                      CustomCommentField(
-                        controller: _comentarioController,
-                        labelText: 'Comentario',
-                        maxLines: 4,
-                        validator:
-                            isEditable
-                                ? (value) {
-                                  if (value == null || value.isEmpty) {
-                                    return 'Por favor ingresa un comentario';
-                                  }
-                                  return null;
-                                }
-                                : null,
-                        readOnly: !isEditable,
-                      ),
-                      const SizedBox(height: 24),
-
-                      //  Rating
-                      if (showRating || widget.isReadOnly)
-                        Column(
-                          children: [
-                            const Text(
-                              'Calificación del trabajo',
-                              style: TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
-                            ),
-                            const SizedBox(height: 8),
-                            StarRating(
-                              rating: _rating,
-                              onRatingChanged:
-                                  isEditable
-                                      ? ((rating) {
-                                        setState(() {
-                                          _rating = rating;
-                                        });
-                                      })
-                                      : null,
-                              interactive: isEditable,
-                            ),
-                            const SizedBox(height: 16),
                           ],
                         ),
+                        const SizedBox(height: 16),
+                      ] else ...[
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            //  Foto antes
+                            Flexible(
+                              child: buildPhotoSection(
+                                'Foto Antes',
+                                _fotoAntesPath,
+                                isEditable ? () => _takePhoto(true) : null,
+                                isEditable: isEditable,
+                                //() => _takePhoto(true),
+                              ),
+                            ),
+
+                            if (_fotoAntesPath != null)
+                              // Foto después
+                              Flexible(
+                                child: buildPhotoSection(
+                                  'Foto Después',
+                                  _fotoDespuesPath,
+                                  isEditable && _fotoAntesPath != null
+                                      ? () => _takePhoto(false)
+                                      : null,
+                                  isEditable: isEditable,
+                                ),
+                              ),
+                          ],
+                        ),
+                        const SizedBox(height: 16),
+
+                        const Divider(),
+                        const SizedBox(height: 10),
+
+                        // Comentario
+                        CustomCommentField(
+                          controller: _comentarioController,
+                          labelText: 'Comentario',
+                          maxLines: 4,
+                          validator:
+                              isEditable
+                                  ? (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Por favor ingresa un comentario';
+                                    }
+                                    return null;
+                                  }
+                                  : null,
+                          readOnly: !isEditable,
+                        ),
+                        const SizedBox(height: 24),
+
+                        //  Rating
+                        if (showRating || widget.isReadOnly)
+                          Column(
+                            children: [
+                              const Text(
+                                'Calificación del trabajo',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              StarRating(
+                                rating: _rating,
+                                onRatingChanged:
+                                    isEditable
+                                        ? ((rating) {
+                                          setState(() {
+                                            _rating = rating;
+                                          });
+                                        })
+                                        : null,
+                                interactive: isEditable,
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                          ),
+                      ],
 
                       // Botón para guardar
                       if (widget.isReadOnly == false)
