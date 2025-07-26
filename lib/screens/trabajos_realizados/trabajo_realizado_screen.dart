@@ -77,6 +77,8 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
             _ubicacion = draftData['ubicacion'] ?? _ubicacion;
             _fotoAntesPath = draftData['fotoAntesPath'];
             _fotoDespuesPath = draftData['fotoDespuesPath'];
+            _fotoMaterialPath = draftData['fotoMaterialPath'];
+            _requiereMaterial = draftData['requiereMaterial'] ?? false;
             _rating = draftData['rating'] ?? 0;
           });
         }
@@ -100,6 +102,9 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
         _rating = widget.trabajoRealizado!.encuenstaTR ?? 0;
         _fotoAntesPath = widget.trabajoRealizado!.fotoAntes64TR;
         _fotoDespuesPath = widget.trabajoRealizado!.fotoDespues64TR;
+        _fotoMaterialPath = widget.trabajoRealizado!.fotoRequiereMaterial64TR;
+        _requiereMaterial =
+            widget.trabajoRealizado!.fotoRequiereMaterial64TR != null;
       });
     }
 
@@ -222,9 +227,17 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
     setState(() => _isLoading = true);
 
     try {
-      // Validar solo comentario como requerido
-      if (_comentarioController.text.isEmpty && _requiereMaterial == false) {
+      if (_comentarioController.text.isEmpty) {
         showAdvertence(context, 'Debes agregar un comentario');
+        return;
+      }
+      if (_requiereMaterial && _fotoMaterialPath == null) {
+        showAdvertence(context, 'Debes tomar una foto de evidencia');
+        return;
+      }
+
+      if (!_requiereMaterial && _fotoAntesPath == null) {
+        showAdvertence(context, 'Debes tomar una foto del antes del trabajo');
         return;
       }
 
@@ -243,7 +256,7 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
         comentarioTR: _comentarioController.text,
         fotoAntes64TR: _fotoAntesPath,
         fotoDespues64TR: _fotoDespuesPath,
-        fotoRequiereMaterial64TR: _requiereMaterial ? _fotoMaterialPath : null,
+        fotoRequiereMaterial64TR: _fotoMaterialPath,
         encuenstaTR: _rating,
         idUserTR:
             widget.trabajoRealizado?.idUserTR ?? _salida?.id_User_Asignado,
@@ -309,6 +322,8 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
         'ubicacion': _ubicacion,
         'fotoAntesPath': _fotoAntesPath,
         'fotoDespuesPath': _fotoDespuesPath,
+        'fotoMaterialPath': _fotoMaterialPath,
+        'requiereMaterial': _requiereMaterial,
         'rating': _rating,
       };
 
@@ -319,10 +334,12 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
   }
 
   bool get _isTrabajoCompleto {
-    // Solo considerar completo si tiene ambas fotos
     return widget.isReadOnly ||
         (widget.trabajoRealizado?.fotoAntes64TR != null &&
-            widget.trabajoRealizado?.fotoDespues64TR != null);
+            widget.trabajoRealizado?.fotoDespues64TR != null) ||
+        (widget.trabajoRealizado?.fotoRequiereMaterial64TR != null &&
+            widget.trabajoRealizado?.comentarioTR != null &&
+            widget.trabajoRealizado!.comentarioTR!.isNotEmpty);
   }
 
   @override
@@ -373,7 +390,7 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
                         const SizedBox(height: 8),
 
                         //  Orden Trabajo
-                        buildSectionCard('Orden de Trabajo', [
+                        buildSectionCard('Orden de Servicio', [
                           buildInfoItem(
                             'Folio',
                             widget.trabajoRealizado?.folioOS ?? 'N/A',
@@ -471,6 +488,25 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
                           ],
                         ),
                         const SizedBox(height: 16),
+                        const Divider(),
+                        const SizedBox(height: 10),
+                        // Comentario
+                        CustomCommentField(
+                          controller: _comentarioController,
+                          labelText: 'Comentario',
+                          maxLines: 4,
+                          validator:
+                              isEditable
+                                  ? (value) {
+                                    if (value == null || value.isEmpty) {
+                                      return 'Por favor ingresa un comentario';
+                                    }
+                                    return null;
+                                  }
+                                  : null,
+                          readOnly: !isEditable,
+                        ),
+                        const SizedBox(height: 24),
                       ] else ...[
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -501,7 +537,6 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
                           ],
                         ),
                         const SizedBox(height: 16),
-
                         const Divider(),
                         const SizedBox(height: 10),
 
