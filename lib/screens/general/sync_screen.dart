@@ -38,7 +38,22 @@ class _SyncScreenState extends State<SyncScreen> {
     });
   }
 
+  Future<void> _debugTrabajos() async {
+    final trabajos = await _dbHelper.getTrabajosNoSincronizados();
+    for (var t in trabajos) {
+      print('''
+    Trabajo ID: ${t.idTrabajoRealizado}
+    Folio: ${t.folioTR}
+    Foto Antes: ${t.fotoAntes64TR != null ? 'SI' : 'NO'}
+    Foto Después: ${t.fotoDespues64TR != null ? 'SI' : 'NO'}
+    Foto Material: ${t.fotoRequiereMaterial64TR != null ? 'SI' : 'NO'}
+    Comentario: ${t.comentarioTR ?? 'NULO'}
+    ''');
+    }
+  }
+
   Future<bool> _syncData() async {
+    await _debugTrabajos();
     setState(() {
       _isSyncing = true;
       _syncedItems = 0;
@@ -49,17 +64,25 @@ class _SyncScreenState extends State<SyncScreen> {
     try {
       final trabajos = await _dbHelper.getTrabajosNoSincronizados();
       final trabajosCompletos =
-          trabajos
-              .where(
-                (t) =>
-                    t.fotoAntes64TR != null &&
-                    t.fotoAntes64TR!.isNotEmpty &&
-                    t.fotoDespues64TR != null &&
-                    t.fotoDespues64TR!.isNotEmpty &&
-                    t.comentarioTR != null &&
-                    t.comentarioTR!.isNotEmpty,
-              )
-              .toList();
+          trabajos.where((t) {
+            //  Caso 1: Trabajo completo tradicional
+            final datosCompletos =
+                t.fotoAntes64TR != null &&
+                t.fotoAntes64TR!.isNotEmpty &&
+                t.fotoDespues64TR != null &&
+                t.fotoDespues64TR!.isNotEmpty &&
+                t.comentarioTR != null &&
+                t.comentarioTR!.isNotEmpty;
+
+            // Caso 2: Requiere material
+            final requiereMaterial =
+                t.fotoRequiereMaterial64TR != null &&
+                t.fotoRequiereMaterial64TR!.isNotEmpty &&
+                t.comentarioTR != null &&
+                t.comentarioTR!.isNotEmpty;
+
+            return datosCompletos || requiereMaterial;
+          }).toList();
 
       if (trabajosCompletos.isEmpty) {
         await showAdvertence(
@@ -86,7 +109,10 @@ class _SyncScreenState extends State<SyncScreen> {
                 trabajo.idOrdenServicio!,
               );
               if (orden != null) {
-                final ordenActualizada = orden.copyWith(estadoOS: 'Revisión');
+                final ordenActualizada = orden.copyWith(
+                  estadoOS: 'Revisión',
+                  materialOS: trabajo.fotoRequiereMaterial64TR != null,
+                );
                 await _ordenServicioController.editOrdenServicio(
                   ordenActualizada,
                 );
@@ -96,10 +122,7 @@ class _SyncScreenState extends State<SyncScreen> {
 
             // Eliminar el trabajo localmente
             await _dbHelper.deleteTrabajo(trabajo.idTrabajoRealizado!);
-
-            setState(() {
-              _syncedItems++;
-            });
+            setState(() => _syncedItems++);
           }
         } catch (e) {
           print('Error al sincronizar trabajo: $e');
