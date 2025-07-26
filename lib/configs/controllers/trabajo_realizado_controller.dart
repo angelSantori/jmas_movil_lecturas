@@ -4,8 +4,8 @@ import 'dart:convert';
 import 'dart:io';
 
 import 'package:http/io_client.dart';
-import 'package:jmas_movil_lecturas/configs/controllers/orden_servicio_controller.dart';
 
+import 'package:jmas_movil_lecturas/configs/controllers/orden_servicio_controller.dart';
 import 'package:jmas_movil_lecturas/configs/service/auth_service.dart';
 import 'package:jmas_movil_lecturas/configs/service/database_helper.dart';
 
@@ -128,7 +128,10 @@ class TrabajoRealizadoController {
             trabajoRealizado.idOrdenServicio!,
           );
           if (orden != null) {
-            final ordenActualizada = orden.copyWith(estadoOS: 'Revisión');
+            final ordenActualizada = orden.copyWith(
+              estadoOS: 'Revisión',
+              materialOS: trabajoRealizado.fotoRequiereMaterial64TR != null,
+            );
             await ordenServicioController.editOrdenServicio(ordenActualizada);
           }
         }
@@ -158,6 +161,7 @@ class TrabajoRealizado {
   String? comentarioTR;
   String? fotoAntes64TR;
   String? fotoDespues64TR;
+  String? fotoRequiereMaterial64TR;
   int? encuenstaTR;
   int? idUserTR;
   int? idOrdenServicio;
@@ -174,6 +178,7 @@ class TrabajoRealizado {
     this.comentarioTR,
     this.fotoAntes64TR,
     this.fotoDespues64TR,
+    this.fotoRequiereMaterial64TR,
     this.encuenstaTR,
     this.idUserTR,
     this.idOrdenServicio,
@@ -192,6 +197,7 @@ class TrabajoRealizado {
     String? comentarioTR,
     String? fotoAntes64TR,
     String? fotoDespues64TR,
+    String? fotoRequiereMaterial64TR,
     int? encuenstaTR,
     int? idUserTR,
     int? idOrdenServicio,
@@ -209,6 +215,8 @@ class TrabajoRealizado {
       comentarioTR: comentarioTR ?? this.comentarioTR,
       fotoAntes64TR: fotoAntes64TR ?? this.fotoAntes64TR,
       fotoDespues64TR: fotoDespues64TR ?? this.fotoDespues64TR,
+      fotoRequiereMaterial64TR:
+          fotoRequiereMaterial64TR ?? this.fotoRequiereMaterial64TR,
       encuenstaTR: encuenstaTR ?? this.encuenstaTR,
       idUserTR: idUserTR ?? this.idUserTR,
       idOrdenServicio: idOrdenServicio ?? this.idOrdenServicio,
@@ -229,6 +237,7 @@ class TrabajoRealizado {
       'comentarioTR': comentarioTR,
       'fotoAntes64TR': fotoAntes64TR,
       'fotoDespues64TR': fotoDespues64TR,
+      'fotoRequiereMaterial64TR': fotoRequiereMaterial64TR,
       'encuenstaTR': encuenstaTR,
       'idUserTR': idUserTR,
       'idOrdenServicio': idOrdenServicio,
@@ -258,6 +267,10 @@ class TrabajoRealizado {
           map['fotoDespues64TR'] != null
               ? map['fotoDespues64TR'] as String
               : null,
+      fotoRequiereMaterial64TR:
+          map['fotoRequiereMaterial64TR'] != null
+              ? map['fotoRequiereMaterial64TR'] as String
+              : null,
       encuenstaTR:
           map['encuenstaTR'] != null ? map['encuenstaTR'] as int : null,
       idUserTR: map['idUserTR'] != null ? map['idUserTR'] as int : null,
@@ -285,7 +298,7 @@ class TrabajoRealizado {
 
   @override
   String toString() {
-    return 'TrabajoRealizado(idTrabajoRealizado: $idTrabajoRealizado, folioTR: $folioTR, fechaTR: $fechaTR, ubicacionTR: $ubicacionTR, comentarioTR: $comentarioTR, fotoAntes64TR: $fotoAntes64TR, fotoDespues64TR: $fotoDespues64TR, encuenstaTR: $encuenstaTR, idUserTR: $idUserTR, idOrdenServicio: $idOrdenServicio, folioOS: $folioOS, padronNombre: $padronNombre, padronDireccion: $padronDireccion, problemaNombre: $problemaNombre, idSalida: $idSalida)';
+    return 'TrabajoRealizado(idTrabajoRealizado: $idTrabajoRealizado, folioTR: $folioTR, fechaTR: $fechaTR, ubicacionTR: $ubicacionTR, comentarioTR: $comentarioTR, fotoAntes64TR: $fotoAntes64TR, fotoDespues64TR: $fotoDespues64TR, fotoRequiereMaterial64TR: $fotoRequiereMaterial64TR, encuenstaTR: $encuenstaTR, idUserTR: $idUserTR, idOrdenServicio: $idOrdenServicio, folioOS: $folioOS, padronNombre: $padronNombre, padronDireccion: $padronDireccion, problemaNombre: $problemaNombre, idSalida: $idSalida)';
   }
 
   @override
@@ -299,6 +312,7 @@ class TrabajoRealizado {
         other.comentarioTR == comentarioTR &&
         other.fotoAntes64TR == fotoAntes64TR &&
         other.fotoDespues64TR == fotoDespues64TR &&
+        other.fotoRequiereMaterial64TR == fotoRequiereMaterial64TR &&
         other.encuenstaTR == encuenstaTR &&
         other.idUserTR == idUserTR &&
         other.idOrdenServicio == idOrdenServicio &&
@@ -318,6 +332,7 @@ class TrabajoRealizado {
         comentarioTR.hashCode ^
         fotoAntes64TR.hashCode ^
         fotoDespues64TR.hashCode ^
+        fotoRequiereMaterial64TR.hashCode ^
         encuenstaTR.hashCode ^
         idUserTR.hashCode ^
         idOrdenServicio.hashCode ^
