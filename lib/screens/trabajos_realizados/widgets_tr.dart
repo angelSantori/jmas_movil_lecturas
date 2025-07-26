@@ -80,13 +80,12 @@ Widget buildSectionCard(String title, List<Widget> children) {
 
 Widget buildPhotoSection(
   String title,
-  String?
-  imageData, // Cambiado de imagePath a imageData para reflejar que puede ser base64
+  String? imageData,
   VoidCallback? onTap, {
   bool isEditable = true,
 }) {
   return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
+    crossAxisAlignment: CrossAxisAlignment.center,
     children: [
       Text(
         title,
