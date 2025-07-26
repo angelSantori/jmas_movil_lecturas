@@ -7,12 +7,12 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 class AuthService {
   //  Casa
-  //final String apiURL = 'https://192.168.0.2:5001/api';
-  final String apiURL = 'https://192.168.0.2:5001/api'; //  Casa
-  
+  //final String apiURL = 'http://192.168.0.2:5000/api'; // Casa http
+  final String apiURL = 'https://192.168.0.2:5001/api'; //  Casa https
+
   //  Trabajo
-  //final String apiURL = 'http://192.168.137.1:5000/api'; //  Wifi servidor
-  //final String apiURL = 'https://192.168.137.1:5001/api'; //  Wifi servidor
+  //final String apiURL = 'http://192.168.137.1:5000/api'; //  Wifi servidor http
+  //final String apiURL = 'https://192.168.137.1:5001/api'; //  Wifi servidor https
 
   Users? _currentUser;
 
