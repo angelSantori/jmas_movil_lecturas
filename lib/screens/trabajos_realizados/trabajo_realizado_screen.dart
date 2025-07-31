@@ -261,7 +261,7 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
         idUserTR:
             widget.trabajoRealizado?.idUserTR ?? _salida?.id_User_Asignado,
         idOrdenServicio: widget.ordenServicio.idOrdenServicio,
-        idSalida: _salida?.id_Salida,
+        folioSalida: widget.trabajoRealizado?.folioOS,
         folioOS: widget.trabajoRealizado?.folioOS,
         padronNombre: widget.trabajoRealizado?.padronNombre,
         padronDireccion: widget.trabajoRealizado?.padronDireccion,
