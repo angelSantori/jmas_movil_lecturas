@@ -41,7 +41,7 @@ class DatabaseHelper {
             padronNombre TEXT,
             padronDireccion TEXT,
             problemaNombre TEXT,
-            idSalida INTEGER,
+            folioSalida TEXT,
             sincronizado INTEGER DEFAULT 0,
             fechaModificacion TEXT
           )
@@ -52,19 +52,22 @@ class DatabaseHelper {
         CREATE TABLE orden_servicio(
           idOrdenServicio INTEGER PRIMARY KEY,
           folioOS TEXT,
+          contactoOS TEXT,
           fechaOS TEXT,
           materialOS INTEGER,
           estadoOS TEXT,
           prioridadOS TEXT,
-          contactoOS INTEGER,
           idUser INTEGER,
           idPadron INTEGER,
           idTipoProblema INTEGER,
-          idMedio INTEGER
+          idMedio INTEGER,
+          idCalle INTEGER,
+          idColonia INTEGER,
+          idUserAsignado INTEGER
         )
       ''');
       },
-      version: 15,
+      version: 17,
     );
   }
 
@@ -84,11 +87,14 @@ class DatabaseHelper {
         materialOS INTEGER,
         estadoOS TEXT,
         prioridadOS TEXT,
-        contactoOS INTEGER,
+        contactoOS TEXT,
         idUser INTEGER,
         idPadron INTEGER,
         idTipoProblema INTEGER,
-        idMedio INTEGER
+        idMedio INTEGER,
+        idCalle INTEGER,
+        idColonia INTEGER,
+        idUserAsignado INTEGER,
       )
     ''');
       return false;
@@ -109,6 +115,9 @@ class DatabaseHelper {
       'idPadron': orden.idPadron,
       'idTipoProblema': orden.idTipoProblema,
       'idMedio': orden.idMedio,
+      'idCalle': orden.idCalle,
+      'idColonia': orden.idColonia,
+      'idUserAsignado': orden.idUserAsignado,
     }, conflictAlgorithm: ConflictAlgorithm.replace);
   }
 
@@ -189,7 +198,7 @@ class DatabaseHelper {
         'padronNombre',
         'padronDireccion',
         'problemaNombre',
-        'idSalida',
+        'folioSalida',
         'sincronizado',
         'fechaModificacion',
       ], // Excluye fotoAntes64TR y fotoDespues64TR
@@ -220,11 +229,6 @@ class DatabaseHelper {
       whereArgs: [id],
     );
   }
-
-  // Future<int> clearTrabajos() async {
-  //   final db = await database;
-  //   return await db.delete('trabajos_realizados');
-  // }
 
   Future<int> clearTrabajos() async {
     final db = await database;
