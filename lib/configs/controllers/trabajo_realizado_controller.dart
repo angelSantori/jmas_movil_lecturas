@@ -169,7 +169,7 @@ class TrabajoRealizado {
   String? padronNombre;
   String? padronDireccion;
   String? problemaNombre;
-  int? idSalida;
+  String? folioSalida;
   TrabajoRealizado({
     this.idTrabajoRealizado,
     this.folioTR,
@@ -186,7 +186,7 @@ class TrabajoRealizado {
     this.padronNombre,
     this.padronDireccion,
     this.problemaNombre,
-    this.idSalida,
+    this.folioSalida,
   });
 
   TrabajoRealizado copyWith({
@@ -205,7 +205,7 @@ class TrabajoRealizado {
     String? padronNombre,
     String? padronDireccion,
     String? problemaNombre,
-    int? idSalida,
+    String? folioSalida,
   }) {
     return TrabajoRealizado(
       idTrabajoRealizado: idTrabajoRealizado ?? this.idTrabajoRealizado,
@@ -224,7 +224,7 @@ class TrabajoRealizado {
       padronNombre: padronNombre ?? this.padronNombre,
       padronDireccion: padronDireccion ?? this.padronDireccion,
       problemaNombre: problemaNombre ?? this.problemaNombre,
-      idSalida: idSalida ?? this.idSalida,
+      folioSalida: folioSalida ?? this.folioSalida,
     );
   }
 
@@ -245,7 +245,7 @@ class TrabajoRealizado {
       'padronNombre': padronNombre,
       'padronDireccion': padronDireccion,
       'problemaNombre': problemaNombre,
-      'idSalida': idSalida,
+      'folioSalida': folioSalida,
     };
   }
 
@@ -287,7 +287,8 @@ class TrabajoRealizado {
           map['problemaNombre'] != null
               ? map['problemaNombre'] as String
               : null,
-      idSalida: map['idSalida'] != null ? map['idSalida'] as int : null,
+      folioSalida:
+          map['folioSalida'] != null ? map['folioSalida'] as String : null,
     );
   }
 
@@ -298,7 +299,7 @@ class TrabajoRealizado {
 
   @override
   String toString() {
-    return 'TrabajoRealizado(idTrabajoRealizado: $idTrabajoRealizado, folioTR: $folioTR, fechaTR: $fechaTR, ubicacionTR: $ubicacionTR, comentarioTR: $comentarioTR, fotoAntes64TR: $fotoAntes64TR, fotoDespues64TR: $fotoDespues64TR, fotoRequiereMaterial64TR: $fotoRequiereMaterial64TR, encuenstaTR: $encuenstaTR, idUserTR: $idUserTR, idOrdenServicio: $idOrdenServicio, folioOS: $folioOS, padronNombre: $padronNombre, padronDireccion: $padronDireccion, problemaNombre: $problemaNombre, idSalida: $idSalida)';
+    return 'TrabajoRealizado(idTrabajoRealizado: $idTrabajoRealizado, folioTR: $folioTR, fechaTR: $fechaTR, ubicacionTR: $ubicacionTR, comentarioTR: $comentarioTR, fotoAntes64TR: $fotoAntes64TR, fotoDespues64TR: $fotoDespues64TR, fotoRequiereMaterial64TR: $fotoRequiereMaterial64TR, encuenstaTR: $encuenstaTR, idUserTR: $idUserTR, idOrdenServicio: $idOrdenServicio, folioOS: $folioOS, padronNombre: $padronNombre, padronDireccion: $padronDireccion, problemaNombre: $problemaNombre, folioSalida: $folioSalida)';
   }
 
   @override
@@ -320,7 +321,7 @@ class TrabajoRealizado {
         other.padronNombre == padronNombre &&
         other.padronDireccion == padronDireccion &&
         other.problemaNombre == problemaNombre &&
-        other.idSalida == idSalida;
+        other.folioSalida == folioSalida;
   }
 
   @override
@@ -340,6 +341,6 @@ class TrabajoRealizado {
         padronNombre.hashCode ^
         padronDireccion.hashCode ^
         problemaNombre.hashCode ^
-        idSalida.hashCode;
+        folioSalida.hashCode;
   }
 }
