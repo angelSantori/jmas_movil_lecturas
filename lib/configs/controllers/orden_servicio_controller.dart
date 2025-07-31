@@ -130,54 +130,66 @@ class OrdenServicioController {
 class OrdenServicio {
   int? idOrdenServicio;
   String? folioOS;
+  String? contactoOS;
   String? fechaOS;
   bool? materialOS;
   String? estadoOS;
   String? prioridadOS;
-  int? contactoOS;
   int? idUser;
   int? idPadron;
   int? idTipoProblema;
   int? idMedio;
+  int? idCalle;
+  int? idColonia;
+  int? idUserAsignado;
   OrdenServicio({
     this.idOrdenServicio,
     this.folioOS,
+    this.contactoOS,
     this.fechaOS,
     this.materialOS,
     this.estadoOS,
     this.prioridadOS,
-    this.contactoOS,
     this.idUser,
     this.idPadron,
     this.idTipoProblema,
     this.idMedio,
+    this.idCalle,
+    this.idColonia,
+    this.idUserAsignado,
   });
 
   OrdenServicio copyWith({
     int? idOrdenServicio,
     String? folioOS,
+    String? contactoOS,
     String? fechaOS,
     bool? materialOS,
     String? estadoOS,
     String? prioridadOS,
-    int? contactoOS,
     int? idUser,
     int? idPadron,
     int? idTipoProblema,
     int? idMedio,
+    int? idCalle,
+    int? idColonia,
+    int? idUserAsignado,
   }) {
     return OrdenServicio(
       idOrdenServicio: idOrdenServicio ?? this.idOrdenServicio,
       folioOS: folioOS ?? this.folioOS,
+      contactoOS: contactoOS ?? this.contactoOS,
       fechaOS: fechaOS ?? this.fechaOS,
       materialOS: materialOS ?? this.materialOS,
       estadoOS: estadoOS ?? this.estadoOS,
       prioridadOS: prioridadOS ?? this.prioridadOS,
-      contactoOS: contactoOS ?? this.contactoOS,
       idUser: idUser ?? this.idUser,
       idPadron: idPadron ?? this.idPadron,
       idTipoProblema: idTipoProblema ?? this.idTipoProblema,
       idMedio: idMedio ?? this.idMedio,
+      idCalle: idCalle ?? this.idCalle,
+      idColonia: idColonia ?? this.idColonia,
+      idUserAsignado: idUserAsignado ?? this.idUserAsignado,
     );
   }
 
@@ -185,15 +197,18 @@ class OrdenServicio {
     return <String, dynamic>{
       'idOrdenServicio': idOrdenServicio,
       'folioOS': folioOS,
+      'contactoOS': contactoOS,
       'fechaOS': fechaOS,
       'materialOS': materialOS,
       'estadoOS': estadoOS,
       'prioridadOS': prioridadOS,
-      'contactoOS': contactoOS,
       'idUser': idUser,
       'idPadron': idPadron,
       'idTipoProblema': idTipoProblema,
       'idMedio': idMedio,
+      'idCalle': idCalle,
+      'idColonia': idColonia,
+      'idUserAsignado': idUserAsignado,
     };
   }
 
@@ -202,22 +217,22 @@ class OrdenServicio {
       idOrdenServicio:
           map['idOrdenServicio'] != null ? map['idOrdenServicio'] as int : null,
       folioOS: map['folioOS'] != null ? map['folioOS'] as String : null,
+      contactoOS:
+          map['contactoOS'] != null ? map['contactoOS'] as String : null,
       fechaOS: map['fechaOS'] != null ? map['fechaOS'] as String : null,
-      materialOS:
-          map['materialOS'] != null
-              ? (map['materialOS'] is bool
-                  ? map['materialOS']
-                  : (map['materialOS'] as int) == 1)
-              : null,
+      materialOS: map['materialOS'] != null ? map['materialOS'] as bool : null,
       estadoOS: map['estadoOS'] != null ? map['estadoOS'] as String : null,
       prioridadOS:
           map['prioridadOS'] != null ? map['prioridadOS'] as String : null,
-      contactoOS: map['contactoOS'] != null ? map['contactoOS'] as int : null,
       idUser: map['idUser'] != null ? map['idUser'] as int : null,
       idPadron: map['idPadron'] != null ? map['idPadron'] as int : null,
       idTipoProblema:
           map['idTipoProblema'] != null ? map['idTipoProblema'] as int : null,
       idMedio: map['idMedio'] != null ? map['idMedio'] as int : null,
+      idCalle: map['idCalle'] != null ? map['idCalle'] as int : null,
+      idColonia: map['idColonia'] != null ? map['idColonia'] as int : null,
+      idUserAsignado:
+          map['idUserAsignado'] != null ? map['idUserAsignado'] as int : null,
     );
   }
 
@@ -228,7 +243,7 @@ class OrdenServicio {
 
   @override
   String toString() {
-    return 'OrdenServicio(idOrdenServicio: $idOrdenServicio, folioOS: $folioOS, fechaOS: $fechaOS, materialOS: $materialOS, estadoOS: $estadoOS, prioridadOS: $prioridadOS, contactoOS: $contactoOS, idUser: $idUser, idPadron: $idPadron, idTipoProblema: $idTipoProblema, idMedio: $idMedio)';
+    return 'OrdenServicio(idOrdenServicio: $idOrdenServicio, folioOS: $folioOS, contactoOS: $contactoOS, fechaOS: $fechaOS, materialOS: $materialOS, estadoOS: $estadoOS, prioridadOS: $prioridadOS, idUser: $idUser, idPadron: $idPadron, idTipoProblema: $idTipoProblema, idMedio: $idMedio, idCalle: $idCalle, idColonia: $idColonia, idUserAsignado: $idUserAsignado)';
   }
 
   @override
@@ -237,29 +252,35 @@ class OrdenServicio {
 
     return other.idOrdenServicio == idOrdenServicio &&
         other.folioOS == folioOS &&
+        other.contactoOS == contactoOS &&
         other.fechaOS == fechaOS &&
         other.materialOS == materialOS &&
         other.estadoOS == estadoOS &&
         other.prioridadOS == prioridadOS &&
-        other.contactoOS == contactoOS &&
         other.idUser == idUser &&
         other.idPadron == idPadron &&
         other.idTipoProblema == idTipoProblema &&
-        other.idMedio == idMedio;
+        other.idMedio == idMedio &&
+        other.idCalle == idCalle &&
+        other.idColonia == idColonia &&
+        other.idUserAsignado == idUserAsignado;
   }
 
   @override
   int get hashCode {
     return idOrdenServicio.hashCode ^
         folioOS.hashCode ^
+        contactoOS.hashCode ^
         fechaOS.hashCode ^
         materialOS.hashCode ^
         estadoOS.hashCode ^
         prioridadOS.hashCode ^
-        contactoOS.hashCode ^
         idUser.hashCode ^
         idPadron.hashCode ^
         idTipoProblema.hashCode ^
-        idMedio.hashCode;
+        idMedio.hashCode ^
+        idCalle.hashCode ^
+        idColonia.hashCode ^
+        idUserAsignado.hashCode;
   }
 }
