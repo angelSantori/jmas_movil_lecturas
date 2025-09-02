@@ -34,7 +34,8 @@ class DatabaseHelper {
             fotoAntes64TR TEXT,
             fotoDespues64TR TEXT,
             fotoRequiereMaterial64TR TEXT,
-            encuenstaTR INTEGER,
+            firma64TR TEXT,
+            estadoTR TEXT,
             idUserTR INTEGER,
             idOrdenServicio INTEGER,
             folioOS TEXT,
@@ -67,7 +68,7 @@ class DatabaseHelper {
         )
       ''');
       },
-      version: 17,
+      version: 19,
     );
   }
 
@@ -191,7 +192,8 @@ class DatabaseHelper {
         'fotoAntes64TR',
         'fotoDespues64TR',
         'fotoRequiereMaterial64TR',
-        'encuenstaTR',
+        'firma64TR',
+        'estadoTR',
         'idUserTR',
         'idOrdenServicio',
         'folioOS',
