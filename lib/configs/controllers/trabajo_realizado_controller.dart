@@ -162,7 +162,8 @@ class TrabajoRealizado {
   String? fotoAntes64TR;
   String? fotoDespues64TR;
   String? fotoRequiereMaterial64TR;
-  int? encuenstaTR;
+  String? firma64TR;
+  String? estadoTR;
   int? idUserTR;
   int? idOrdenServicio;
   String? folioOS;
@@ -179,7 +180,8 @@ class TrabajoRealizado {
     this.fotoAntes64TR,
     this.fotoDespues64TR,
     this.fotoRequiereMaterial64TR,
-    this.encuenstaTR,
+    this.firma64TR,
+    this.estadoTR,
     this.idUserTR,
     this.idOrdenServicio,
     this.folioOS,
@@ -198,7 +200,8 @@ class TrabajoRealizado {
     String? fotoAntes64TR,
     String? fotoDespues64TR,
     String? fotoRequiereMaterial64TR,
-    int? encuenstaTR,
+    String? firma64TR,
+    String? estadoTR,
     int? idUserTR,
     int? idOrdenServicio,
     String? folioOS,
@@ -217,7 +220,8 @@ class TrabajoRealizado {
       fotoDespues64TR: fotoDespues64TR ?? this.fotoDespues64TR,
       fotoRequiereMaterial64TR:
           fotoRequiereMaterial64TR ?? this.fotoRequiereMaterial64TR,
-      encuenstaTR: encuenstaTR ?? this.encuenstaTR,
+      firma64TR: firma64TR ?? this.firma64TR,
+      estadoTR: estadoTR ?? this.estadoTR,
       idUserTR: idUserTR ?? this.idUserTR,
       idOrdenServicio: idOrdenServicio ?? this.idOrdenServicio,
       folioOS: folioOS ?? this.folioOS,
@@ -238,7 +242,8 @@ class TrabajoRealizado {
       'fotoAntes64TR': fotoAntes64TR,
       'fotoDespues64TR': fotoDespues64TR,
       'fotoRequiereMaterial64TR': fotoRequiereMaterial64TR,
-      'encuenstaTR': encuenstaTR,
+      'firma64TR': firma64TR,
+      'estadoTR': estadoTR,
       'idUserTR': idUserTR,
       'idOrdenServicio': idOrdenServicio,
       'folioOS': folioOS,
@@ -271,8 +276,8 @@ class TrabajoRealizado {
           map['fotoRequiereMaterial64TR'] != null
               ? map['fotoRequiereMaterial64TR'] as String
               : null,
-      encuenstaTR:
-          map['encuenstaTR'] != null ? map['encuenstaTR'] as int : null,
+      firma64TR: map['firma64TR'] != null ? map['firma64TR'] as String : null,
+      estadoTR: map['estadoTR'] != null ? map['estadoTR'] as String : null,
       idUserTR: map['idUserTR'] != null ? map['idUserTR'] as int : null,
       idOrdenServicio:
           map['idOrdenServicio'] != null ? map['idOrdenServicio'] as int : null,
@@ -299,7 +304,7 @@ class TrabajoRealizado {
 
   @override
   String toString() {
-    return 'TrabajoRealizado(idTrabajoRealizado: $idTrabajoRealizado, folioTR: $folioTR, fechaTR: $fechaTR, ubicacionTR: $ubicacionTR, comentarioTR: $comentarioTR, fotoAntes64TR: $fotoAntes64TR, fotoDespues64TR: $fotoDespues64TR, fotoRequiereMaterial64TR: $fotoRequiereMaterial64TR, encuenstaTR: $encuenstaTR, idUserTR: $idUserTR, idOrdenServicio: $idOrdenServicio, folioOS: $folioOS, padronNombre: $padronNombre, padronDireccion: $padronDireccion, problemaNombre: $problemaNombre, folioSalida: $folioSalida)';
+    return 'TrabajoRealizado(idTrabajoRealizado: $idTrabajoRealizado, folioTR: $folioTR, fechaTR: $fechaTR, ubicacionTR: $ubicacionTR, comentarioTR: $comentarioTR, fotoAntes64TR: $fotoAntes64TR, fotoDespues64TR: $fotoDespues64TR, fotoRequiereMaterial64TR: $fotoRequiereMaterial64TR, firma64TR: $firma64TR, estadoTR: $estadoTR, idUserTR: $idUserTR, idOrdenServicio: $idOrdenServicio, folioOS: $folioOS, padronNombre: $padronNombre, padronDireccion: $padronDireccion, problemaNombre: $problemaNombre, folioSalida: $folioSalida)';
   }
 
   @override
@@ -314,7 +319,8 @@ class TrabajoRealizado {
         other.fotoAntes64TR == fotoAntes64TR &&
         other.fotoDespues64TR == fotoDespues64TR &&
         other.fotoRequiereMaterial64TR == fotoRequiereMaterial64TR &&
-        other.encuenstaTR == encuenstaTR &&
+        other.firma64TR == firma64TR &&
+        other.estadoTR == estadoTR &&
         other.idUserTR == idUserTR &&
         other.idOrdenServicio == idOrdenServicio &&
         other.folioOS == folioOS &&
@@ -334,7 +340,8 @@ class TrabajoRealizado {
         fotoAntes64TR.hashCode ^
         fotoDespues64TR.hashCode ^
         fotoRequiereMaterial64TR.hashCode ^
-        encuenstaTR.hashCode ^
+        firma64TR.hashCode ^
+        estadoTR.hashCode ^
         idUserTR.hashCode ^
         idOrdenServicio.hashCode ^
         folioOS.hashCode ^
