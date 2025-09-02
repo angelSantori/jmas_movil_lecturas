@@ -22,6 +22,7 @@ dependencies:
   connectivity_plus: ^6.1.4 #Conexión
   sqflite: ^2.4.2 #DB
   flutter_svg: ^2.2.0 #SVG
+  signature: ^6.3.0 #Firma
 
 dev_dependencies:
   flutter_test:
