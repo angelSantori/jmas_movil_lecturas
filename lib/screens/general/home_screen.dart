@@ -3,6 +3,7 @@ import 'package:jmas_movil_lecturas/configs/controllers/orden_servicio_controlle
 import 'package:jmas_movil_lecturas/configs/controllers/trabajo_realizado_controller.dart';
 import 'package:jmas_movil_lecturas/configs/service/auth_service.dart';
 import 'package:jmas_movil_lecturas/configs/service/database_helper.dart';
+import 'package:jmas_movil_lecturas/screens/general/login2.dart';
 import 'package:jmas_movil_lecturas/screens/general/login_screen.dart';
 import 'package:jmas_movil_lecturas/screens/general/sync_screen.dart';
 import 'package:jmas_movil_lecturas/screens/trabajos_realizados/trabajo_realizado_screen.dart';
@@ -159,7 +160,7 @@ class _HomeScreenState extends State<HomeScreen> {
 
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (context) => const LoginScreen()),
+        MaterialPageRoute(builder: (context) => const LoginPage()),
         (Route<dynamic> route) => false,
       );
     }
