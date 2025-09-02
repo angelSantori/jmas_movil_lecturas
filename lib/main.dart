@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:jmas_movil_lecturas/configs/service/auth_service.dart';
 import 'package:jmas_movil_lecturas/screens/general/home_screen.dart';
+import 'package:jmas_movil_lecturas/screens/general/login2.dart';
 import 'package:jmas_movil_lecturas/screens/general/login_screen.dart';
 
 void main() async {
@@ -26,9 +27,10 @@ class MyApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue.shade900),
         useMaterial3: true,
       ),
-      home: isLoggedIn ? const HomeScreen() : const LoginScreen(),
+      home: isLoggedIn ? const HomeScreen() : const LoginPage(),
       routes: {
-        '/login': (context) => const LoginScreen(),
+        //'/login': (context) => const LoginScreen(),
+        '/login': (context) => const LoginPage(),
         '/home': (context) => const HomeScreen(),
       },
     );
