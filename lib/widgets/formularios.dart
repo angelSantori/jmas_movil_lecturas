@@ -10,6 +10,7 @@ class CustomTextFielTexto extends StatefulWidget {
   final ValueChanged<String>? onChanged;
   final TextInputType? keyboardType;
   final bool? obscureText;
+  final bool preventSpaces;
 
   const CustomTextFielTexto({
     super.key,
@@ -21,6 +22,7 @@ class CustomTextFielTexto extends StatefulWidget {
     this.onChanged,
     this.keyboardType,
     this.obscureText = false,
+    this.preventSpaces = false,
   });
 
   @override
@@ -33,6 +35,8 @@ class _CustomTextFielTextoState extends State<CustomTextFielTexto>
   late Animation<Offset> _animation;
   late FocusNode _focusNode;
   bool _isFocused = false;
+
+  final _noSpacesFormatter = FilteringTextInputFormatter.deny(RegExp(r'\s'));
 
   @override
   void initState() {
@@ -71,6 +75,16 @@ class _CustomTextFielTextoState extends State<CustomTextFielTexto>
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
 
+    List<TextInputFormatter> finalInputFormatters = [];
+
+    if (widget.inputFormatters != null) {
+      finalInputFormatters.addAll(widget.inputFormatters!);
+    }
+
+    if (widget.preventSpaces) {
+      finalInputFormatters.add(_noSpacesFormatter);
+    }
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 8.0),
       child: SlideTransition(
@@ -93,8 +107,12 @@ class _CustomTextFielTextoState extends State<CustomTextFielTexto>
           ),
           child: TextFormField(
             controller: widget.controller,
-            inputFormatters: widget.inputFormatters,
-            onChanged: widget.onChanged,
+            inputFormatters: finalInputFormatters,
+            onChanged: (value) {
+              if (widget.onChanged != null) {
+                widget.onChanged!(value);
+              }
+            },
             focusNode: _focusNode,
             keyboardType: widget.keyboardType,
             obscureText: widget.obscureText ?? false,
