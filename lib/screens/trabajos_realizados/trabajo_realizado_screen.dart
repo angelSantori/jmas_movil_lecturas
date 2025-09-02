@@ -12,6 +12,7 @@ import 'package:jmas_movil_lecturas/screens/trabajos_realizados/widgets_tr.dart'
 import 'package:jmas_movil_lecturas/widgets/formularios.dart';
 import 'package:jmas_movil_lecturas/widgets/mensajes.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:signature/signature.dart';
 
 class TrabajoRealizadoScreen extends StatefulWidget {
   final OrdenServicio ordenServicio;
@@ -40,11 +41,15 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
   String? _nombreColonia;
   bool _isLoading = false;
   Salidas? _salida;
+  String? _estadoTrabajo;
   final _formKey = GlobalKey<FormState>();
   final bool _hasExistingData = false;
   bool _requiereMaterial = false;
 
-  int _rating = 0;
+  //  Firma
+  SignatureController? _signatureController;
+  String? _firmaPath;
+  bool _showSignaturePad = false;
 
   @override
   void initState() {
@@ -54,6 +59,24 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
     _loadInitialData();
     _comentarioController.addListener(_saveDraftData);
     _loadDraftData();
+
+    _signatureController = SignatureController(
+      penStrokeWidth: 2,
+      penColor: Colors.blue.shade900,
+    );
+
+    if (widget.trabajoRealizado?.estadoTR == null) {
+      _estadoTrabajo = 'Completado';
+    }
+  }
+
+  @override
+  void dispose() {
+    _signatureController?.dispose();
+    _comentarioController.removeListener(_saveDraftData);
+    _comentarioController.dispose();
+    _saveDraftData();
+    super.dispose();
   }
 
   Future<void> _loadDraftData() async {
@@ -78,8 +101,9 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
             _fotoAntesPath = draftData['fotoAntesPath'];
             _fotoDespuesPath = draftData['fotoDespuesPath'];
             _fotoMaterialPath = draftData['fotoMaterialPath'];
+            _firmaPath = draftData['firmaPath'];
             _requiereMaterial = draftData['requiereMaterial'] ?? false;
-            _rating = draftData['rating'] ?? 0;
+            _estadoTrabajo = draftData['estadoTrabajo'] ?? 'Completado';
           });
         }
       }
@@ -99,10 +123,11 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
         _comentarioController.text =
             widget.trabajoRealizado!.comentarioTR ?? '';
         _ubicacion = widget.trabajoRealizado!.ubicacionTR;
-        _rating = widget.trabajoRealizado!.encuenstaTR ?? 0;
+        _estadoTrabajo = widget.trabajoRealizado!.estadoTR ?? 'Completado';
         _fotoAntesPath = widget.trabajoRealizado!.fotoAntes64TR;
         _fotoDespuesPath = widget.trabajoRealizado!.fotoDespues64TR;
         _fotoMaterialPath = widget.trabajoRealizado!.fotoRequiereMaterial64TR;
+        _firmaPath = widget.trabajoRealizado!.firma64TR;
         _requiereMaterial =
             widget.trabajoRealizado!.fotoRequiereMaterial64TR != null;
       });
@@ -257,7 +282,8 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
         fotoAntes64TR: _fotoAntesPath,
         fotoDespues64TR: _fotoDespuesPath,
         fotoRequiereMaterial64TR: _fotoMaterialPath,
-        encuenstaTR: _rating,
+        firma64TR: _firmaPath,
+        estadoTR: _estadoTrabajo,
         idUserTR:
             widget.trabajoRealizado?.idUserTR ?? _salida?.id_User_Asignado,
         idOrdenServicio: widget.ordenServicio.idOrdenServicio,
@@ -288,7 +314,7 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
         _fotoDespuesPath = trabajo.fotoDespues64TR;
         _fotoMaterialPath = trabajo.fotoRequiereMaterial64TR;
         _comentarioController.text = trabajo.comentarioTR ?? '';
-        _rating = trabajo.encuenstaTR ?? 0;
+        _estadoTrabajo = _estadoTrabajo ?? 'Completado';
       });
 
       if (!mounted) return;
@@ -323,8 +349,9 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
         'fotoAntesPath': _fotoAntesPath,
         'fotoDespuesPath': _fotoDespuesPath,
         'fotoMaterialPath': _fotoMaterialPath,
+        'firmaPath': _firmaPath,
         'requiereMaterial': _requiereMaterial,
-        'rating': _rating,
+        'estadoTrabajo': _estadoTrabajo,
       };
 
       await file.writeAsString(json.encode(draftData));
@@ -342,12 +369,49 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
             widget.trabajoRealizado!.comentarioTR!.isNotEmpty);
   }
 
-  @override
-  void dispose() {
-    _comentarioController.removeListener(_saveDraftData);
-    _comentarioController.dispose();
-    _saveDraftData();
-    super.dispose();
+  Future<void> _captureSignature() async {
+    try {
+      if (_signatureController!.isNotEmpty) {
+        setState(() => _isLoading = true);
+
+        // Configuración de alta calidad
+        final signature = await _signatureController!.toPngBytes(
+          height: 500, // Alta resolución
+          width: 1000, // Alta resolución
+        );
+
+        if (signature != null) {
+          setState(() {
+            _firmaPath = base64Encode(signature);
+            _showSignaturePad = false;
+            _isLoading = false;
+          });
+          await _saveDraftData();
+
+          if (mounted) {
+            showOk(context, 'Firma capturada con éxito');
+          }
+        }
+      } else {
+        showAdvertence(context, 'Por favor, proporciona la firma');
+      }
+    } catch (e) {
+      setState(() => _isLoading = false);
+      print('Error al capturar firma: $e');
+      showError(context, 'Error al capturar firma');
+    }
+  }
+
+  void _clearSignature() {
+    _signatureController!.clear();
+  }
+
+  bool get _shouldShowSignatureOptions {
+    return !_requiereMaterial &&
+        _fotoAntesPath != null &&
+        _fotoDespuesPath != null &&
+        _comentarioController.text.isNotEmpty &&
+        _estadoTrabajo != null;
   }
 
   @override
@@ -518,7 +582,6 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
                                 _fotoAntesPath,
                                 isEditable ? () => _takePhoto(true) : null,
                                 isEditable: isEditable,
-                                //() => _takePhoto(true),
                               ),
                             ),
 
@@ -556,35 +619,268 @@ class _TrabajoRealizadoScreenState extends State<TrabajoRealizadoScreen> {
                                   : null,
                           readOnly: !isEditable,
                         ),
-                        const SizedBox(height: 24),
 
-                        //  Rating
-                        if (showRating || widget.isReadOnly)
+                        // Sección de firma - CORREGIDO
+                        if (_shouldShowSignatureOptions &&
+                            !_showSignaturePad &&
+                            _firmaPath == null)
                           Column(
                             children: [
+                              const SizedBox(height: 24),
                               const Text(
-                                'Calificación del trabajo',
+                                'Firma del cliente',
                                 style: TextStyle(
                                   fontSize: 16,
                                   fontWeight: FontWeight.bold,
                                 ),
                               ),
                               const SizedBox(height: 8),
-                              StarRating(
-                                rating: _rating,
-                                onRatingChanged:
-                                    isEditable
-                                        ? ((rating) {
-                                          setState(() {
-                                            _rating = rating;
-                                          });
-                                        })
-                                        : null,
-                                interactive: isEditable,
+                              ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    _showSignaturePad = true;
+                                  });
+                                },
+                                child: const Text('Capturar firma'),
                               ),
                               const SizedBox(height: 16),
                             ],
                           ),
+
+                        if (_showSignaturePad)
+                          Column(
+                            children: [
+                              const SizedBox(height: 24),
+                              const Text(
+                                'Firma del cliente',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Container(
+                                decoration: BoxDecoration(
+                                  border: Border.all(color: Colors.grey),
+                                ),
+                                height: 200,
+                                child: Signature(
+                                  controller: _signatureController!,
+                                  backgroundColor: Colors.white,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  ElevatedButton(
+                                    onPressed: _clearSignature,
+                                    style: ElevatedButton.styleFrom(
+                                      backgroundColor: Colors.red,
+                                    ),
+                                    child: const Text(
+                                      'Limpiar',
+                                      style: TextStyle(color: Colors.white),
+                                    ),
+                                  ),
+                                  ElevatedButton(
+                                    onPressed: _captureSignature,
+                                    child: const Text('Guardar Firma'),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                          ),
+
+                        if (_firmaPath != null && !_showSignaturePad)
+                          Column(
+                            children: [
+                              const SizedBox(height: 24),
+                              const Text(
+                                'Firma Capturada',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Image.memory(
+                                base64Decode(_firmaPath!),
+                                height: 100,
+                              ),
+                              const SizedBox(height: 8),
+                              if (isEditable)
+                                ElevatedButton(
+                                  onPressed: () {
+                                    setState(() {
+                                      _firmaPath = null;
+                                      _showSignaturePad = true;
+                                    });
+                                  },
+                                  style: ElevatedButton.styleFrom(
+                                    backgroundColor: Colors.orange,
+                                  ),
+                                  child: const Text(
+                                    'Capturar Nueva Firma',
+                                    style: TextStyle(color: Colors.white),
+                                  ),
+                                ),
+                              const SizedBox(height: 16),
+                            ],
+                          ),
+
+                        const SizedBox(height: 24),
+
+                        //  Rating
+                        if (showRating || widget.isReadOnly) ...[
+                          Column(
+                            children: [
+                              const SizedBox(height: 16),
+                              const Text(
+                                'Estado del trabajo',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              const SizedBox(height: 8),
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceEvenly,
+                                children: [
+                                  // Opción Completado (Verde)
+                                  GestureDetector(
+                                    onTap:
+                                        isEditable
+                                            ? () {
+                                              setState(() {
+                                                _estadoTrabajo = 'Completado';
+                                              });
+                                            }
+                                            : null,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            _estadoTrabajo == 'Completado'
+                                                ? Colors.green
+                                                : Colors.grey[200],
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color:
+                                              _estadoTrabajo == 'Completado'
+                                                  ? Colors.green
+                                                  : Colors.grey,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          Container(
+                                            width: 24,
+                                            height: 24,
+                                            decoration: const BoxDecoration(
+                                              color: Colors.green,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          const Text('Completado'),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+
+                                  // Opción Pendiente (Amarillo)
+                                  GestureDetector(
+                                    onTap:
+                                        isEditable
+                                            ? () {
+                                              setState(() {
+                                                _estadoTrabajo = 'Pendiente';
+                                              });
+                                            }
+                                            : null,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            _estadoTrabajo == 'Pendiente'
+                                                ? Colors.orange
+                                                : Colors.grey[200],
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color:
+                                              _estadoTrabajo == 'Pendiente'
+                                                  ? Colors.orange
+                                                  : Colors.grey,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          Container(
+                                            width: 24,
+                                            height: 24,
+                                            decoration: const BoxDecoration(
+                                              color: Colors.orange,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          const Text('Pendiente'),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+
+                                  // Opción Cancelado (Rojo)
+                                  GestureDetector(
+                                    onTap:
+                                        isEditable
+                                            ? () {
+                                              setState(() {
+                                                _estadoTrabajo = 'Falla';
+                                              });
+                                            }
+                                            : null,
+                                    child: Container(
+                                      padding: const EdgeInsets.all(12),
+                                      decoration: BoxDecoration(
+                                        color:
+                                            _estadoTrabajo == 'Falla'
+                                                ? Colors.red
+                                                : Colors.grey[200],
+                                        borderRadius: BorderRadius.circular(8),
+                                        border: Border.all(
+                                          color:
+                                              _estadoTrabajo == 'Falla'
+                                                  ? Colors.red
+                                                  : Colors.grey,
+                                        ),
+                                      ),
+                                      child: Column(
+                                        children: [
+                                          Container(
+                                            width: 24,
+                                            height: 24,
+                                            decoration: const BoxDecoration(
+                                              color: Colors.red,
+                                              shape: BoxShape.circle,
+                                            ),
+                                          ),
+                                          const SizedBox(height: 4),
+                                          const Text('Falla'),
+                                        ],
+                                      ),
+                                    ),
+                                  ),
+                                ],
+                              ),
+                              const SizedBox(height: 16),
+                            ],
+                          ),
+                        ],
                       ],
 
                       // Botón para guardar
