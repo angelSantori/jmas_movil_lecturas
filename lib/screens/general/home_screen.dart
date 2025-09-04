@@ -4,7 +4,7 @@ import 'package:jmas_movil_lecturas/configs/controllers/trabajo_realizado_contro
 import 'package:jmas_movil_lecturas/configs/service/auth_service.dart';
 import 'package:jmas_movil_lecturas/configs/service/database_helper.dart';
 import 'package:jmas_movil_lecturas/screens/general/login2.dart';
-import 'package:jmas_movil_lecturas/screens/general/login_screen.dart';
+//import 'package:jmas_movil_lecturas/screens/general/login_screen.dart';
 import 'package:jmas_movil_lecturas/screens/general/sync_screen.dart';
 import 'package:jmas_movil_lecturas/screens/trabajos_realizados/trabajo_realizado_screen.dart';
 import 'package:jmas_movil_lecturas/widgets/colores.dart';

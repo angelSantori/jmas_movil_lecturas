@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:jmas_movil_lecturas/configs/service/auth_service.dart';
 import 'package:jmas_movil_lecturas/screens/general/home_screen.dart';
 import 'package:jmas_movil_lecturas/screens/general/login2.dart';
-import 'package:jmas_movil_lecturas/screens/general/login_screen.dart';
+//import 'package:jmas_movil_lecturas/screens/general/login_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
